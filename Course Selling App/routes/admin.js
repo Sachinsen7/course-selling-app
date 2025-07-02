@@ -3,7 +3,7 @@ const adminMiddleware = require("../middleware/admin")
 const { AdminModel} = require("../db/db")
 const bcrypt = require("bcryptjs")
 const z = require("zod")
-const { JWT_SECRET } = require("../config")
+const { JWT_SECRET, JWT_ADMIN_SECRET } = require("../config")
 const jwt = require("jsonwebtoken")
 const adminRouter = Router()
 
@@ -78,7 +78,7 @@ adminRouter.post("/signin", async (req, res) => {
     if(passwordMatch){
         const token = jwt.sign({
             id: admin._id
-        }, JWT_SECRET)
+        }, JWT_ADMIN_SECRET)
 
         res.json({
             token
@@ -88,10 +88,6 @@ adminRouter.post("/signin", async (req, res) => {
             message: "Invalid Credientials"
         })
     }
-
-    res.json({
-        message: "Signed in successfully"
-    })
 })
 
 adminRouter.post("/", (req, res) => {
