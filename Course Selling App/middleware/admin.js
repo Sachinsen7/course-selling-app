@@ -12,7 +12,7 @@ function adminMiddleware(req, res, next){
     }
     const words = token.split(" ")
     const jwtToken = words[1]
-    const decodeData = jwt.sign(jwtToken, JWT_ADMIN_SECRET)
+    const decodeData = jwt.sign(jwtToken, process.env.JWT_ADMIN_SECRET)
 
     if(decodeData.username){
         req.userId = decodeData.id
