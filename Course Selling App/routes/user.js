@@ -80,7 +80,7 @@ userRouter.post("/signin", async (req, res) => {
     if(passwordMatch){
         const token = jwt.sign({
             id: user._id
-        }, JWT_USER_SECRET)
+        }, process.env.JWT_USER_SECRET)
 
         res.json({
             token
