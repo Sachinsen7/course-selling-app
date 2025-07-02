@@ -1,9 +1,10 @@
 const jwt = require("jsonwebtoken")
 const { Router } = require("express")
-const { UserModel } = require("../db/db")
+const { UserModel, PurchaseModel, CourseModel } = require("../db/db")
 const bcrypt = require("bcryptjs")
 const z = require("zod")
 const userRouter = Router()
+const usermiddleware = require("../middleware/user")
 
 
 
@@ -91,12 +92,23 @@ userRouter.post("/signin", async (req, res) => {
     }
 })
 
-userRouter.post("/course", (req, res) => {
-    
-})
+userRouter.post("/purchasedCourses", usermiddleware, async (req, res) => {
+    const userId = req.userId
 
-userRouter.post("/purchasedCourses", (req, res) => {
-    
+    const purchases = await PurchaseModel.find({
+        userId
+    })
+
+    const coursesData = await CourseModel.find({
+        _id: {
+            $in: purchases.map((p) => p.courseId)
+        }
+    })
+
+    res.json({
+        message: "Purchased Courses",
+        coursesData
+    })
 })
 
 module.exports = {
