@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken")
-const { JWT_USER_SECRET } = require("../config")
+
 
 function userMiddleware(req, res, next){
     const token = req.headers.authorization
@@ -11,7 +11,7 @@ function userMiddleware(req, res, next){
     }
     const words = token.split(" ")
     const jwtToken = words[1]
-    const decodeData = jwt.sign(jwtToken, JWT_USER_SECRET)
+    const decodeData = jwt.verify(jwtToken, process.env.JWT_USER_SECRET)
 
     if(decodeData.username){
         next()
