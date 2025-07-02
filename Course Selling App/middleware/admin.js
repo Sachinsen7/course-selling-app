@@ -1,25 +1,28 @@
 const jwt = require("jsonwebtoken")
-const { JWT_ADMIN_SECRET } = require("../config")
-
 
 function adminMiddleware(req, res, next){
     const token = req.headers.authorization
 
     if(!token){
-        res.json({
+       return res.json({
             message: "Token is missing!"
         })
     }
     const words = token.split(" ")
     const jwtToken = words[1]
-    const decodeData = jwt.sign(jwtToken, process.env.JWT_ADMIN_SECRET)
-
-    if(decodeData.username){
-        req.userId = decodeData.id
-        next()
-    } else {
+    try {
+        const decodeData = jwt.verify(jwtToken, process.env.JWT_ADMIN_SECRET)
+        if(decodeData && decodeData.id){
+            req.userId = decodeData.id
+            next()
+        } else {
+            res.status(403).json({
+                message: "Invalid Credentials"
+            })
+        }
+    } catch (err) {
         res.status(403).json({
-            message: "Invalid Credientials"
+            message: "Invalid or expired token"
         })
     }
 }
