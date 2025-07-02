@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken")
-const { JWT_SECRET } = require("../config")
+const { JWT_ADMIN_SECRET } = require("../config")
 
 
 function adminMiddleware(req, res, next){
@@ -12,9 +12,10 @@ function adminMiddleware(req, res, next){
     }
     const words = token.split(" ")
     const jwtToken = words[1]
-    const decodeData = jwt.sign(jwtToken, JWT_SECRET)
+    const decodeData = jwt.sign(jwtToken, JWT_ADMIN_SECRET)
 
     if(decodeData.username){
+        req.userId = decodeData.id
         next()
     } else {
         res.status(403).json({
