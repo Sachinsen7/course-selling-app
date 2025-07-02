@@ -13,7 +13,8 @@ function userMiddleware(req, res, next){
     const jwtToken = words[1]
     const decodeData = jwt.verify(jwtToken, process.env.JWT_USER_SECRET)
 
-    if(decodeData.username){
+    if(decodeData && decodeData.id){
+        req.userId = decodeData.id
         next()
     } else {
         res.status(403).json({
