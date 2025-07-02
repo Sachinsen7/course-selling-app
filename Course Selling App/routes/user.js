@@ -3,7 +3,6 @@ const { Router } = require("express")
 const { UserModel } = require("../db/db")
 const bcrypt = require("bcryptjs")
 const z = require("zod")
-const { JWT_SECRET, JWT_USER_SECRET } = require("../config")
 const userRouter = Router()
 
 
@@ -19,7 +18,7 @@ userRouter.post("/signup", async (req, res) => {
     const parsSuccess = requiredBody.safeParse(req.body)
 
     if(!parsSuccess.success){
-        res.json({
+        return res.json({
             message: "Incorrect Format",
             error: parsSuccess.error 
         })
@@ -37,7 +36,7 @@ userRouter.post("/signup", async (req, res) => {
             secondName
         })
     } catch (error) {
-        res.json({
+        return res.json({
             message: "You are already Signed up!"
         })
     }
