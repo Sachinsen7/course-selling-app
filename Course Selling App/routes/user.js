@@ -3,7 +3,7 @@ const { Router } = require("express")
 const { UserModel } = require("../db/db")
 const bcrypt = require("bcryptjs")
 const z = require("zod")
-const { JWT_SECRET } = require("../config")
+const { JWT_SECRET, JWT_USER_SECRET } = require("../config")
 const userRouter = Router()
 
 
@@ -80,7 +80,7 @@ userRouter.post("/signin", async (req, res) => {
     if(passwordMatch){
         const token = jwt.sign({
             id: user._id
-        }, JWT_SECRET)
+        }, JWT_USER_SECRET)
 
         res.json({
             token
@@ -90,12 +90,6 @@ userRouter.post("/signin", async (req, res) => {
             message: "Invalid Credientials"
         })
     }
-
-    res.json({
-        message: "Signed in successfully"
-    })
-   
-    
 })
 
 userRouter.post("/course", (req, res) => {
