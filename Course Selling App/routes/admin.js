@@ -96,7 +96,7 @@ adminRouter.post("/course", adminMiddleware, async (req, res) => {
 
     const user = await CourseModel.create({
         title,
-        description,
+        description,    
         imageLink,
         price,
         CreaterId: adminId  
