@@ -1,1 +1,11 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Keep the existing media query for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .motion {
+    animation: none !important;
+    transition: none !important;
+  }
+} 
