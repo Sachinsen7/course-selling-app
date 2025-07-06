@@ -41,7 +41,7 @@ export const getCourseById = async (id) => {
 
 export const registerUser = async (userData) => {
     try {
-        const response = await api.post("/auth/signup", userData)
+        const response = await api.post("/user/signup", userData)
         return response.data
     } catch (error) {
         throw new Error(error.response?.data?.message || "failed to register user");
