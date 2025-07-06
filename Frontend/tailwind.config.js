@@ -1,8 +1,16 @@
-// tailwind.config.js
-const theme = require('./src/utils/theme');
-
-module.exports = {
+import theme from "./src/utils/theme"
+export default {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  safelist: [
+    'bg-background-main',
+    'bg-secondary-dark',
+    'text-background-card',
+    'p-spacing-md',
+    'mt-spacing-lg',
+    'space-x-spacing-md',
+    'mt-spacing-sm',
+    'hover:text-primary-light'
+  ],
   theme: {
     extend: {
       colors: {
