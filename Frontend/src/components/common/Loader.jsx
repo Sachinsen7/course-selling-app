@@ -1,8 +1,20 @@
-import React from 'react'
+import { motion } from "framer-motion"
+import theme from "../../utils/theme"
 
 function Loader() {
+
+
   return (
-    <div>Loader</div>
+    <motion.div 
+      className="flex justify-center items-center min-h-screen"
+      animate={{rotate: 360}}
+      transition={{duration: 1, repeat: Infinity, ease: "linear"}}
+    >
+      <div
+      className="w-8 h-8 border-4 rounded-full"
+      style={{borderColor: `${theme.colors.primary.main} traseparent`}}
+      />
+    </motion.div>
   )
 }
 
