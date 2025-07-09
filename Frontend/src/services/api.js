@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
 
 export const getCourses = async (filters = {}) => {
     try {
-        const response = await api.get('/courses', {params: filters})
+        const response = await api.get('/preview', {params: filters})
         return response.data
     } catch (error) {
         throw new Error(error.response?.data?.message || "failed to fetch courses");
