@@ -1,51 +1,54 @@
-import React from 'react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import Navbar from "../components/layout/Navbar"
-import Footer from "../components/layout/Footer"
-import Button from '../components/common/Button'
-import { useAuth } from '../context/AuthContext'
-
-
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
+import Button from '../components/common/Button';
+import { useAuth } from '../context/AuthContext';
 
 function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const { login }  = useAuth()
-  const navigate = useNavigate()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      await login({email, password})
-      navigate("/dashboard")
-    } catch (error) { 
-      alert("Login Failed")
+      await login({ email, password });
+      navigate('/dashboard');
+    } catch (err) {
+      alert(err.message);
     }
-  }
-
-
+  };
 
   return (
-    <div className='min-h-screen bg-background-main'>
-      <Navbar/>
+    <div className="min-h-screen bg-background-main">
+      <Navbar />
       <section className="container mx-auto p-spacing-lg">
-        <h1 className="text-3xl font-sans font-bold text-text-primary mb-spacing-md">Login</h1>
-        <form onSubmit={handleLogin} action="" className="max-w-md mx-auto">
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Email'
-           className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-          />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder='Password'
-           className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-          />
-          <Button text="Login" type="submit" className="w-full"/>
-        </form>
+          <h1 className="text-3xl font-sans font-bold text-text-primary mb-spacing-md">
+            Login
+          </h1>
+          <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
+            />
+            <Button text="Login" type="submit" className="w-full" />
+          </form>
       </section>
-      <Footer/>
+      <Footer />
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;
