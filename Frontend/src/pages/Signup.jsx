@@ -3,22 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import Button from '../components/common/Button';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 function Signup() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const { login } = useAuth();
+  const [formData, setFormData] = useState({
+    firstName: '',
+    secondName: '',
+    email: '',
+    password: ''
+  });
+
+  const { signup } = useAuth();
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login({ email, password, name }); 
+      await signup(formData);
       navigate('/dashboard');
     } catch (err) {
-      alert('Signup failed');
+      alert(err.message);
     }
   };
 
@@ -32,22 +44,33 @@ function Signup() {
         <form onSubmit={handleSubmit} className="max-w-md mx-auto">
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
+            name="firstName"
+            value={formData.firstName}
+            onChange={handleChange}
+            placeholder="First Name"
+            className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
+          />
+          <input
+            type="text"
+            name="secondName"
+            value={formData.secondName}
+            onChange={handleChange}
+            placeholder="Last Name"
             className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
           />
           <input
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
             placeholder="Email"
             className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
           />
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
             placeholder="Password"
             className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
           />
