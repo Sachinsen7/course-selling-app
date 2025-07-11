@@ -68,4 +68,42 @@ export const purchaseCourse = async (courseId) => {
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Purchase failed');
     }
-  };
+};
+
+
+export const getPurchasedCourses = async () => {
+    try {
+      const response = await api.get('/enrollment/purchased');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch purchased courses');
+    }
+};
+  
+
+  export const addReview = async (courseId, reviewData) => {
+    try {
+      const response = await api.post('/review/add', { courseId, ...reviewData });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to add review');
+    }
+};
+  
+export const getReviews = async (courseId) => {
+    try {
+      const response = await api.get(`/review/course/${courseId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch reviews');
+    }
+};
+  
+export const processPayment = async (courseId, paymentDetails) => {
+    try {
+      const response = await api.post('/payment/process', { courseId, paymentDetails });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Payment failed');
+    }
+};
