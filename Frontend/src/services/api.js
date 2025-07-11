@@ -18,10 +18,31 @@ api.interceptors.request.use((config) => {
     return config
 })
 
+export const registerUser = async (userData) => {
+    try {
+        const response = await api.post("/auth/user/signup", userData)
+        return response.data
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "failed to register user");
+        
+    }
+}
+
+
+export const loginUser = async (userData) => {
+    try {
+        const response = await api.post("/auth/user/signin", userData)
+        return response.data
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Login failed");
+        
+    }
+}
+
 export const getCourses = async (filters = {}) => {
     try {
-        const response = await api.get('/preview', {params: filters})
-        return response.data
+        const response = await api.get('/search/preview', {params: filters})
+        return response.data   
     } catch (error) {
         throw new Error(error.response?.data?.message || "failed to fetch courses");
         
@@ -30,7 +51,7 @@ export const getCourses = async (filters = {}) => {
 
 export const getCourseById = async (id) => {
     try {
-        const response = await api.get(`/courses/"${id}`)
+        const response = await api.get(`/search/courses/"${id}`)
         return response.data
     } catch (error) {
         throw new Error(error.response?.data?.message || "failed to fetch course");
@@ -39,12 +60,12 @@ export const getCourseById = async (id) => {
 
 }
 
-export const registerUser = async (userData) => {
+
+export const purchaseCourse = async (courseId) => {
     try {
-        const response = await api.post("/user/signup", userData)
-        return response.data
+      const response = await api.post('/enrollment/purchase', { courseId });
+      return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || "failed to register user");
-        
+      throw new Error(error.response?.data?.message || 'Purchase failed');
     }
-}
+  };
