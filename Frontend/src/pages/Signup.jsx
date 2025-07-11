@@ -38,44 +38,44 @@ function Signup() {
     <div className="min-h-screen bg-background-main">
       <Navbar />
       <section className="container mx-auto p-spacing-lg">
-        <h1 className="text-3xl font-sans font-bold text-text-primary mb-spacing-md">
-          Sign Up
-        </h1>
-        <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-          <input
-            type="text"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            placeholder="First Name"
-            className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-          />
-          <input
-            type="text"
-            name="secondName"
-            value={formData.secondName}
-            onChange={handleChange}
-            placeholder="Last Name"
-            className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-          />
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Email"
-            className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-          />
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Password"
-            className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-          />
-          <Button text="Sign Up" type="submit" className="w-full" />
-        </form>
+          <h1 className="text-3xl font-sans font-bold text-text-primary mb-spacing-md">
+            Sign Up
+          </h1>
+          <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First Name"
+                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
+              />
+              <input
+                type="text"
+                name="secondName"
+                value={formData.secondName}
+                onChange={handleChange}
+                placeholder="Last Name"
+                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
+              />
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email"
+                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
+              />
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Password"
+                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
+              />
+            <Button text="Sign Up" type="submit" className="w-full" />
+          </form>
       </section>
       <Footer />
     </div>
