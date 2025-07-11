@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from "react";
 import PropTypes from "prop-types";
-import { registerUser } from "../services/api";
+import { loginUser,registerUser } from "../services/api";
 
 
 const AuthContext = createContext();
@@ -10,11 +10,18 @@ function AuthProvider({children}){
     const [user, setUser] = useState(null)
     const [token, setToken] = useState(localStorage.getItem("token"))
 
-    const login = async (crediantials)  => {
-        const data = await registerUser(crediantials)
-        setUser(data.user)
+    const login = async (credientials)  => {
+        const data = await loginUser(credientials)
         setToken(data.token)
         localStorage.setItem("token", data.token)
+        setUser({id: data.userId})
+    }
+
+    const signup = async (userData)  => {
+        const data = await loginUser(userData)
+        setToken(data.token)
+        localStorage.setItem("token", data.token)
+        setUser({id: data.userId})
     }
 
 
@@ -26,7 +33,7 @@ function AuthProvider({children}){
 
 
     return (
-        <AuthContext.Provider value={{user, token, login, logout, isAuthenticated: !!token}}>
+        <AuthContext.Provider value={{user, token, login, signup, logout, isAuthenticated: !!token}}>
             {children}
         </AuthContext.Provider>
     )
