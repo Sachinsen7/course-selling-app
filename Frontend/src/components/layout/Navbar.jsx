@@ -6,12 +6,12 @@ function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="bg-secondary-dark text-background-card p-spacing-md h-16 flex w-full">
+    <nav className="bg-secondary-dark text-background-card p-md">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="text-2xl font-sans font-bold">
           LearnSphere
         </Link>
-        <div className="flex space-x-spacing-md gap-5 justify-center">
+        <div className="flex space-x-md">
           <Link
             to="/courses"
             className="text-background-card hover:text-primary-light"
