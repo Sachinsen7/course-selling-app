@@ -6,15 +6,18 @@ const PurchaseModel = require("../models/purchase");
 const ReviewModel = require("../models/review");
 const SectionModel = require("../models/section")
 const LectureModel = require("../models/lectures")
+const UserLectureProgressModel = require("../models/userLectureProgress")
+const QuizModel = require("../models/quiz");
+const QuestionModel = require("../models/question");
+const UserQuizAttemptModel = require("../models/userQuizAttempt");
+const AssignmentSubmissionModel = require("../models/assignmentSubmission");
+
+
+
 
 const connectDB = async (mongoUri) => {
   try {
-    await mongoose.connect(mongoUri, {
-      // useNewUrlParser: true, // These options are deprecated in Mongoose 6+
-      // useUnifiedTopology: true,
-      // useCreateIndex: true, // This option is deprecated in Mongoose 6+
-      // useFindAndModify: false // This option is deprecated in Mongoose 6+
-    });
+    await mongoose.connect(mongoUri);
     console.log("MongoDB Connected Successfully!");
   } catch (err) {
     console.error("MongoDB Connection Error:", err.message);
@@ -29,5 +32,10 @@ module.exports = {
   PurchaseModel,
   ReviewModel,
   LectureModel,
-  SectionModel
+  SectionModel,
+  UserLectureProgressModel,
+  QuizModel,
+  QuestionModel,
+  UserQuizAttemptModel,
+  AssignmentSubmissionModel
 };
