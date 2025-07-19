@@ -1,39 +1,134 @@
-import { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect} from "react";
 import PropTypes from "prop-types";
-import { loginUser,registerUser } from "../services/api";
+import { login as authServiceLogin, signup as authServiceSignup } from '../services/auth';
+import { useToast } from "../components/notifications/toasts";
 
 
 const AuthContext = createContext();
 
 
-function AuthProvider({children}){
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null)
-    const [token, setToken] = useState(localStorage.getItem("token"))
+    const [token, setToken] = useState(localStorage.getItem("token") || null)
+    const [loading, setLoading] = useState(true)
 
-    const login = async (credientials)  => {
-        const data = await loginUser(credientials)
-        setToken(data.token)
-        localStorage.setItem("token", data.token)
-        setUser({id: data.userId})
+    const toast = useToast()
+
+    const decodeToken = useCallback((jwtToken) => {
+    if (!jwtToken) return null;
+    try {
+      const base64Url = jwtToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const decodedPayload = JSON.parse(atob(base64));
+      return decodedPayload;
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      return null;
     }
+  }, []);
 
-    const signup = async (userData)  => {
-        const data = await loginUser(userData)
-        setToken(data.token)
-        localStorage.setItem("token", data.token)
-        setUser({id: data.userId})
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      const decodedUser = decodeToken(storedToken);
+      if (decodedUser && decodedUser.id && decodedUser.role) {
+        setToken(storedToken);
+        setUser(decodedUser);
+      } else {
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+      }
     }
+    setLoading(false);
+  }, [decodeToken]);
 
 
-    const logout = () => {
-        setUser(null)
-        setToken(null)
-        localStorage.removeItem("token")
+   const login = useCallback(async (credentials) => {
+    setLoading(true);
+    try {
+      const data = await authServiceLogin(credentials.email, credentials.password);
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
+      setUser({ userId: data.userId, role: data.role, firstName: data.firstName, lastName: data.lastName });
+      toast({
+        title: "Login Successful!",
+        description: `Welcome back, ${data.firstName || data.email}!`,
+        variant: "success",
+      });
+      return data;
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: error.message,
+        variant: "error",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
     }
+  }, [toast]);
 
+
+   const signup = useCallback(async (userData) => {
+    setLoading(true);
+    try {
+      const data = await authServiceSignup(userData.email, userData.password, userData.firstName, userData.lastName, userData.role);
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
+      setUser({ userId: data.userId, role: data.role, firstName: userData.firstName, lastName: userData.lastName });
+      toast({
+        title: "Signup Successful!",
+        description: "Your account has been created. Welcome!",
+        variant: "success",
+      });
+      return data;
+    } catch (error) {
+      toast({
+        title: "Signup Failed",
+        description: error.message,
+        variant: "error",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+        toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+        variant: "default",
+        });
+    }, [toast]);
+
+
+    const contextValue = React.useMemo(() => ({
+        token,
+        user,
+        isAuthenticated: !!token && !!user,
+        loading,
+        login,
+        signup,
+        logout,
+    }), [token, user, loading, login, signup, logout]);
 
     return (
-        <AuthContext.Provider value={{user, token, login, signup, logout, isAuthenticated: !!token}}>
+        <AuthContext.Provider value={{contextValue}}>
             {children}
         </AuthContext.Provider>
     )
@@ -43,10 +138,4 @@ function AuthProvider({children}){
 
 AuthProvider.propTypes = {
     children: PropTypes.node.isRequired
-}
-
-export {AuthContext, AuthProvider}
-
-export function useAuth(){
-    return useContext(AuthContext)
 }
