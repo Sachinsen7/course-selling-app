@@ -1,4 +1,5 @@
 import theme from "./src/utils/theme";
+import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
@@ -12,7 +13,9 @@ export default {
         accent: theme.colors.accent,
       },
       fontFamily: {
-        sans: theme.fonts.primary,
+        inter: theme.fonts.primary,
+
+        sans: ['Inter', ...defaultTheme.fontFamily.sans]
       },
       spacing: {
         sm: theme.spacing.sm,

@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { CourseModel, UserModel, SectionModel, LectureModel, QuizModel, QuestionModel, AssignmentSubmissionModel } = require("../db/db");
+const { CourseModel, UserModel, SectionModel, LectureModel, QuizModel, QuestionModel, AssignmentSubmissionModel, UserLectureProgressModel, UserQuizAttemptModel} = require("../db/db");
 const authMiddleware = require("../middleware/auth");
 const z = require("zod");
 

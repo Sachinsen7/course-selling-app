@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
-import Button from '../components/common/Button';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Button from '../components/common/Button'; 
+import { AUTH_ROUTES, PROTECTED_ROUTES } from '../routes';
 
 function Signup() {
   const [formData, setFormData] = useState({
     firstName: '',
-    secondName: '',
+    lastName: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'learner'
   });
-
-  const { signup } = useAuth();
+  const [error, setError] = useState('');
+  const { signup, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -26,58 +26,118 @@ function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     try {
-      await signup(formData);
-      navigate('/dashboard');
+      const data = await signup(formData);
+      
+      if (data.role === 'instructor') {
+        navigate(PROTECTED_ROUTES.instructor, { replace: true });
+      } else if (data.role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate(PROTECTED_ROUTES.dashboard, { replace: true });
+      }
     } catch (err) {
-      alert(err.message);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-background-main">
-      <Navbar />
-      <section className="container mx-auto p-spacing-lg">
-          <h1 className="text-3xl font-sans font-bold text-text-primary mb-spacing-md">
-            Sign Up
-          </h1>
-          <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="First Name"
-                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-              />
-              <input
-                type="text"
-                name="secondName"
-                value={formData.secondName}
-                onChange={handleChange}
-                placeholder="Last Name"
-                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-              />
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Email"
-                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-              />
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Password"
-                className="w-full p-spacing-sm mb-spacing-sm border border-secondary-light rounded"
-              />
-            <Button text="Sign Up" type="submit" className="w-full" />
-          </form>
-      </section>
-      <Footer />
+    <div className="min-h-screen flex items-center justify-center bg-background-main p-4 font-inter">
+      <div className="bg-background-card p-8 rounded-lg shadow-lg w-full max-w-md border border-gray-200">
+        <h2 className="text-3xl font-bold text-center text-primary-dark mb-6">Create Your Account</h2>
+        {error && <p className="text-accent-error text-center mb-4 text-sm">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="firstName" className="block text-text-primary text-sm font-semibold mb-2">
+              First Name
+            </label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              placeholder="John"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label htmlFor="lastName" className="block text-text-primary text-sm font-semibold mb-2">
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              placeholder="Doe"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light"
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="block text-text-primary text-sm font-semibold mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="m@example.com"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-text-primary text-sm font-semibold mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label htmlFor="role" className="block text-text-primary text-sm font-semibold mb-2">
+              Sign up as:
+            </label>
+            <select
+              id="role"
+              name="role"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-light"
+              value={formData.role}
+              onChange={handleChange}
+              disabled={loading}
+            >
+              <option value="learner">Learner</option>
+              <option value="instructor">Instructor</option>
+            </select>
+          </div>
+          <Button text={loading ? 'Signing Up...' : 'Sign Up'} type="submit" className="w-full" disabled={loading} />
+        </form>
+        <p className="text-center text-text-secondary text-sm mt-6">
+          Already have an account?{' '}
+          <Link to={AUTH_ROUTES.login} className="text-primary-main hover:underline">
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
