@@ -4,6 +4,8 @@ const UserModel = require("../models/user");
 const CourseModel = require("../models/course");
 const PurchaseModel = require("../models/purchase");
 const ReviewModel = require("../models/review");
+const SectionModel = require("../models/section")
+const LectureModel = require("../models/lectures")
 
 const connectDB = async (mongoUri) => {
   try {
@@ -26,4 +28,6 @@ module.exports = {
   CourseModel,
   PurchaseModel,
   ReviewModel,
+  LectureModel,
+  SectionModel
 };
