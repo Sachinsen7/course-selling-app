@@ -1,11 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, useEffect} from "react";
-import PropTypes from "prop-types";
-import { login as authServiceLogin, signup as authServiceSignup } from '../services/auth';
-import { useToast } from "../components/notifications/toasts";
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { login as authServiceLogin, signup as authServiceSignup } from '../services/auth'; 
+import { useToast } from '../components/notifications/toasts'; 
 
-
-const AuthContext = createContext();
-
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -15,45 +13,51 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({children}) => {
-    const [user, setUser] = useState(null)
-    const [token, setToken] = useState(localStorage.getItem("token") || null)
-    const [loading, setLoading] = useState(true)
+export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [user, setUser] = useState(null); 
+  const [loading, setLoading] = useState(true); 
 
-    const toast = useToast()
+  const { toast } = useToast();
 
-    const decodeToken = useCallback((jwtToken) => {
+ 
+  const decodeToken = useCallback((jwtToken) => {
     if (!jwtToken) return null;
     try {
       const base64Url = jwtToken.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const decodedPayload = JSON.parse(atob(base64));
-      return decodedPayload;
+      return decodedPayload; 
     } catch (error) {
       console.error("Failed to decode token:", error);
       return null;
     }
   }, []);
 
-
+ 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       const decodedUser = decodeToken(storedToken);
       if (decodedUser && decodedUser.id && decodedUser.role) {
         setToken(storedToken);
-        setUser(decodedUser);
+        setUser({
+          userId: decodedUser.id,
+          role: decodedUser.role,
+          firstName: decodedUser.firstName || 'User',
+          lastName: decodedUser.lastName || '',
+        });
       } else {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
       }
     }
-    setLoading(false);
+    setLoading(false); 
   }, [decodeToken]);
 
 
-   const login = useCallback(async (credentials) => {
+  const login = useCallback(async (credentials) => {
     setLoading(true);
     try {
       const data = await authServiceLogin(credentials.email, credentials.password);
@@ -65,7 +69,7 @@ export const AuthProvider = ({children}) => {
         description: `Welcome back, ${data.firstName || data.email}!`,
         variant: "success",
       });
-      return data;
+      return data; 
     } catch (error) {
       toast({
         title: "Login Failed",
@@ -78,10 +82,11 @@ export const AuthProvider = ({children}) => {
     }
   }, [toast]);
 
-
-   const signup = useCallback(async (userData) => {
+  // Signup function for the context
+  const signup = useCallback(async (userData) => {
     setLoading(true);
     try {
+     
       const data = await authServiceSignup(userData.email, userData.password, userData.firstName, userData.lastName, userData.role);
       localStorage.setItem('token', data.token);
       setToken(data.token);
@@ -104,38 +109,36 @@ export const AuthProvider = ({children}) => {
     }
   }, [toast]);
 
+  // Logout function
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+      variant: "default",
+    });
+  }, [toast]);
 
-    const logout = useCallback(() => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
-        toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-        variant: "default",
-        });
-    }, [toast]);
+ 
+  const contextValue = React.useMemo(() => ({
+    token,
+    user,
+    isAuthenticated: !!token && !!user,
+    loading,
+    login,
+    signup,
+    logout,
+  }), [token, user, loading, login, signup, logout]);
 
-
-    const contextValue = React.useMemo(() => ({
-        token,
-        user,
-        isAuthenticated: !!token && !!user,
-        loading,
-        login,
-        signup,
-        logout,
-    }), [token, user, loading, login, signup, logout]);
-
-    return (
-        <AuthContext.Provider value={{contextValue}}>
-            {children}
-        </AuthContext.Provider>
-    )
-
-    
-}
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
 AuthProvider.propTypes = {
-    children: PropTypes.node.isRequired
-}
+  children: PropTypes.node.isRequired
+};
