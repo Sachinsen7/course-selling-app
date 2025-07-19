@@ -11,6 +11,8 @@ const QuizModel = require("../models/quiz");
 const QuestionModel = require("../models/question");
 const UserQuizAttemptModel = require("../models/userQuizAttempt");
 const AssignmentSubmissionModel = require("../models/assignmentSubmission");
+const CategoryModel = require("../models/category");
+
 
 
 
@@ -37,5 +39,6 @@ module.exports = {
   QuizModel,
   QuestionModel,
   UserQuizAttemptModel,
-  AssignmentSubmissionModel
+  AssignmentSubmissionModel,
+  CategoryModel
 };
