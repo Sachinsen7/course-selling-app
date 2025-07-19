@@ -48,7 +48,7 @@ const LectureSchema = new Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Quiz',
-        required: function() { return this.type === 'quiz'; },
+        // required: function() { return this.type === 'quiz'; },
         unique: function() { return this.type === 'quiz'; }, 
         sparse: true 
     },
