@@ -7,7 +7,7 @@ const LectureSchema = new Schema({
         ref: 'Section',
         required: true
     },
-    courseId: { 
+    courseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course',
         required: true
@@ -22,20 +22,20 @@ const LectureSchema = new Schema({
         enum: ['video', 'text', 'quiz', 'assignment'],
         required: true
     },
-    contentUrl: { 
+    contentUrl: {
         type: String,
-        required: function() { return this.type === 'video' || this.type === 'assignment'; } // Required for video/assignment
+        required: function() { return this.type === 'video' || this.type === 'assignment'; }
     },
     textContent: {
         type: String,
-        required: function() { return this.type === 'text'; } 
+        required: function() { return this.type === 'text'; }
     },
-    duration: { 
+    duration: {
         type: Number,
         min: 0,
         required: function() { return this.type === 'video'; }
     },
-    order: { 
+    order: {
         type: Number,
         required: true,
         min: 0
@@ -43,6 +43,21 @@ const LectureSchema = new Schema({
     isPublished: {
         type: Boolean,
         default: true
+    },
+
+    quizId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Quiz',
+        required: function() { return this.type === 'quiz'; },
+        unique: function() { return this.type === 'quiz'; }, 
+        sparse: true 
+    },
+    assignmentSubmissionId: { 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'AssignmentSubmission',
+        required: function() { return this.type === 'assignment'; },
+        unique: function() { return this.type === 'assignment'; }, 
+        sparse: true
     }
 }, {
     timestamps: true
