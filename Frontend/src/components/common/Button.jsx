@@ -1,13 +1,10 @@
-import PropTypes from "prop-types"
-import { motion } from "framer-motion"
+import PropTypes from "prop-types";
+import { motion } from "framer-motion";
 
-
-
-function Button({text, onClick, className, disabled}) {
-  
+function Button({ text, onClick, className, disabled }) {
   return (
     <motion.button
-      className={`px-spacing-md py-spacing-sm rounded font-sans font-semibold bg-primary-main text-background-card hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      className={`px-spacing-md py-spacing-sm rounded font-sans font-semibold bg-primary-main text-background-card hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1 ${className}`}
       onClick={onClick}
       disabled={disabled}
       whileHover={{ scale: disabled ? 1 : 1.05 }}
@@ -17,21 +14,20 @@ function Button({text, onClick, className, disabled}) {
     >
       {text}
     </motion.button>
-
-  )
+  );
 }
 
 Button.propTypes = {
   text: PropTypes.string.isRequired,
   className: PropTypes.string,
   onClick: PropTypes.func,
-  disabled: PropTypes.bool
-}
+  disabled: PropTypes.bool,
+};
 
 Button.defaultProps = {
   className: "",
   onclick: () => {},
-  disabled: false
-}
+  disabled: false,
+};
 
-export default Button
+export default Button;
