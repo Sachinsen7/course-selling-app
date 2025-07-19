@@ -48,7 +48,7 @@ const CourseSchema = new Schema(
     },
 
     category: {
-      type: String, // For now, a string, later can be ref to Category model
+      type: String, 
       trim: true,
     },
   },
