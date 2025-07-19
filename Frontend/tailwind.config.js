@@ -1,16 +1,7 @@
-import theme from "./src/utils/theme"
+import theme from "./src/utils/theme";
+
 export default {
-  content: ['./src/**/*.{js,jsx,ts,tsx}'],
-  safelist: [
-    'bg-background-main',
-    'bg-secondary-dark',
-    'text-background-card',
-    'p-spacing-md',
-    'mt-spacing-lg',
-    'space-x-spacing-md',
-    'mt-spacing-sm',
-    'hover:text-primary-light'
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -23,7 +14,12 @@ export default {
       fontFamily: {
         sans: theme.fonts.primary,
       },
-      spacing: theme.spacing,
+      spacing: {
+        sm: theme.spacing.sm,
+        md: theme.spacing.md,
+        lg: theme.spacing.lg,
+        xl: theme.spacing.xl,
+      },
     },
   },
   plugins: [],
