@@ -15,6 +15,7 @@ const instructorRouter = require("./routes/instructor");
 const searchRouter = require("./routes/search");
 const paymentRouter = require("./routes/payments");
 const reviewRouter = require("./routes/review");
+const adminRouter = require("./routes/admin")
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/instructor", instructorRouter);
 app.use("/api/search", searchRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/review", reviewRouter);
+app.use("/api/admin", adminRouter)
 
 
 app.use((err, req, res, next) => {
