@@ -1,33 +1,56 @@
 const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+
+
+dotenv.config();
+
+
+const { connectDB } = require("./db/db");
+
+// Import routers
+const authRouter = require("./routes/auth");
+const enrollmentRouter = require("./routes/enrollments");
+const instructorRouter = require("./routes/instructor");
+const searchRouter = require("./routes/search");
+const paymentRouter = require("./routes/payments");
+const reviewRouter = require("./routes/review");
+
 const app = express();
-const {authRouter} =  require("./routes/auth")
-const {enrollmentRouter} =  require("./routes/enrollments")
-const {instructorRouter} =  require("./routes/instructor")
-const {searchRouter} =  require("./routes/search")
-const {paymentRouter} =  require("./routes/payments")
-const {reviewRouter} =  require("./routes/review")
+
+// Middleware
+app.use(express.json());
+app.use(cors());
 
 
-app.use(express.json())
-const dotenv = require("dotenv")
-const mongoose = require("mongoose")
+app.get("/", (req, res) => {
+    res.send("LMS Backend API is running!");
+});
 
-dotenv.config()
-
-app.use("/api/auth", authRouter)
-app.use("/api/enrollment", enrollmentRouter)
-app.use("/api/instructor", instructorRouter)
-app.use("/api/search", searchRouter)
-app.use("/api/payment", paymentRouter)
-app.use("/api/review", reviewRouter)
-
-
-async function connectDB(){
-    await mongoose.connect(process.env.MONGO_URI)
-    app.listen(3000)
-    console.log("Listening on port 3000")
-}
-
-connectDB()
+// Mount routers
+app.use("/api/auth", authRouter);
+app.use("/api/enrollment", enrollmentRouter);
+app.use("/api/instructor", instructorRouter);
+app.use("/api/search", searchRouter);
+app.use("/api/payment", paymentRouter);
+app.use("/api/review", reviewRouter);
 
 
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ message: "Something went wrong on the server!" });
+});
+
+// Connect to DB 
+const PORT = process.env.PORT || 3000;
+
+connectDB(process.env.MONGO_URI)
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server listening on port ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.error("Failed to connect to database and start server:", error);
+        process.exit(1);
+    });
