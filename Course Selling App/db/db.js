@@ -1,53 +1,29 @@
-const mongoose = require("mongoose")
-const Schema = mongoose.Schema
-const ObjectId = mongoose.ObjectId
+const mongoose = require("mongoose");
 
+const UserModel = require("../models/user");
+const CourseModel = require("../models/course");
+const PurchaseModel = require("../models/purchase");
+const ReviewModel = require("../models/review");
 
-const User = new Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    firstName: { type: String, required: true },
-    secondName: { type: String, required: true },
-})
-
-const Admin = new Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    firstName: { type: String, required: true },
-    secondName: { type: String, required: true },
-})
-
-const Course = new Schema({
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    imageLink: { type: String, required: true },
-    price: { type: Number, required: true },
-    creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
-})
-
-const Purchases = new Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
-}) 
-
-const Review = new Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, required: true },
-})
-
-const UserModel = mongoose.model("User", User)
-const AdminModel = mongoose.model("Admin", Admin)
-const CourseModel = mongoose.model("Course", Course)
-const PurchaseModel = mongoose.model("Purchase", Purchases)
-const ReviewModel = mongoose.model("Review", Review)
-
+const connectDB = async (mongoUri) => {
+  try {
+    await mongoose.connect(mongoUri, {
+      // useNewUrlParser: true, // These options are deprecated in Mongoose 6+
+      // useUnifiedTopology: true,
+      // useCreateIndex: true, // This option is deprecated in Mongoose 6+
+      // useFindAndModify: false // This option is deprecated in Mongoose 6+
+    });
+    console.log("MongoDB Connected Successfully!");
+  } catch (err) {
+    console.error("MongoDB Connection Error:", err.message);
+    process.exit(1);
+  }
+};
 
 module.exports = {
-    UserModel,
-    AdminModel,
-    CourseModel,
-    PurchaseModel,
-    ReviewModel
-}
+  connectDB,
+  UserModel,
+  CourseModel,
+  PurchaseModel,
+  ReviewModel,
+};
