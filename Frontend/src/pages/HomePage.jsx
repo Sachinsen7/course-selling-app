@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import PropTypes from 'prop-types';
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
-import CourseCard from '../components/course/CourseCard';
-import SearchBar from '../components/user/SearchBar';
-import Loader from '../components/common/Loader';
-import { getCourses } from '../services/api';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import PropTypes from "prop-types";
+import Navbar from "../components/layout/Navbar";
+import Footer from "../components/layout/Footer";
+import CourseCard from "../components/course/CourseCard";
+import SearchBar from "../components/user/SearchBar";
+import Loader from "../components/common/Loader";
+import { getCourses } from "../services/api";
 
 function Home() {
   const [courses, setCourses] = useState([]);
@@ -28,11 +28,12 @@ function Home() {
   }, []);
 
   if (loading) return <Loader />;
-  if (error) return <div className="text-accent-error text-center">{error}</div>;
+  if (error)
+    return <div className="text-accent-error text-center">{error}</div>;
 
   return (
     <div className="min-h-screen bg-background-main">
-      <Navbar />
+      {/* <Navbar /> */}
       <motion.section
         className="container mx-auto p-spacing-lg"
         initial={{ opacity: 0, y: 20 }}
@@ -49,7 +50,7 @@ function Home() {
           ))}
         </div>
       </motion.section>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }
