@@ -1,25 +1,41 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import PropTypes from 'prop-types'; 
 
-function SearchBar() {
-    const [query, setQuery] = useState("")
-    const navigate = useNavigate()
+function SearchBar({ onSearch }) {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        if(query) navigate(`/search?q=${encodeURIComponent(query)}`)
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (onSearch) {
+      onSearch(query);
+    } else {
+      if (query) navigate(`/search?q=${encodeURIComponent(query)}`);
     }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto mb-spacing-lg">
-        <input 
+    <form onSubmit={handleSubmit} className="flex max-w-lg mx-auto mb-spacing-lg rounded-md overflow-hidden shadow-sm border border-gray-200">
+      <input
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search for courses..."
-        className="w-full p-spacing-sm border border-secondary-light rounded"
-        />
+        className="flex-grow p-spacing-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-light"
+      />
+      <button
+        type="submit"
+        className="bg-primary-main text-white px-spacing-md py-spacing-sm hover:bg-primary-dark transition-colors duration-200"
+      >
+        Search
+      </button>
     </form>
-  )
+  );
 }
 
-export default SearchBar
+SearchBar.propTypes = {
+  onSearch: PropTypes.func, 
+};
+
+export default SearchBar;
