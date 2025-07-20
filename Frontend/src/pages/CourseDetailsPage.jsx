@@ -1,18 +1,15 @@
-import React from 'react'
-import { useEffect, useState} from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import Loader from '../components/common/Loader'
-import Button from '../components/common/Button'
-import { PROTECTED_ROUTES } from '../routes'
-import { addReview, enrollInCourse, getEnrolledCourseDetails, getReviews } from '../services/api'
-
-
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom'; 
+import { getCourseById, getEnrolledCourseDetails, enrollInCourse, addReview, getReviews } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import Loader from '../components/common/Loader';
+import Button from '../components/common/Button';
+import { PROTECTED_ROUTES } from '../routes'; 
 
 function CourseDetailsPage() {
-  const { id: courseId } = useParams(); 
+  const { id: courseId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user, showModal } = useAuth(); 
+  const { isAuthenticated, user, showModal } = useAuth();
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,54 +20,55 @@ function CourseDetailsPage() {
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [reviewLoading, setReviewLoading] = useState(false);
 
-
+  // Fetch course details and reviews
   useEffect(() => {
     const fetchCourseData = async () => {
-      setLoading(true)
-      setError(null)
-
+      setLoading(true);
+      setError(null);
       try {
-        let courseData;
-        if(isAuthenticated){
+        let courseData = null;
+        let enrolledStatus = false;
+
+        if (isAuthenticated) {
           try {
-            const enrollData = await getEnrolledCourseDetails(courseId)
-            courseData = enrollData.course
-            setIsEnrolled(true)
+            const enrolledResponse = await getEnrolledCourseDetails(courseId);
+            courseData = enrolledResponse.course;
+            enrolledStatus = true;
           } catch (enrollmentError) {
-            const publicData = await getCourseById(courseId);
-            courseData = publicData.courses[0]; 
-            setIsEnrolled(false);
+            console.warn("Not enrolled or error fetching enrolled details, falling back to public:", enrollmentError.message);
+            const publicResponse = await getCourseById(courseId);
+            courseData = publicResponse.course; 
+            enrolledStatus = false;
           }
         } else {
-          const publicData = await getCourseById(courseId);
-          courseData = publicData.courses[0];
-          setIsEnrolled(false);
+          const publicResponse = await getCourseById(courseId);
+          courseData = publicResponse.course; 
+          enrolledStatus = false;
         }
-        
+
         if (!courseData) {
-          setError("Course not found.");
+          setError("Course not found or not available.");
           setLoading(false);
           return;
         }
         setCourse(courseData);
+        setIsEnrolled(enrolledStatus);
 
-        const reviewsData = await getReviews(courseId)
-        setReviews(reviewsData.reviews || [])
-      } catch (error) {
-        console.error("Error fetching course details:", err);
-        setError(err.message || "Failed to load course details."); 
+        // Fetch reviews
+        const reviewData = await getReviews(courseId);
+        setReviews(reviewData.reviews || []);
+
+      } catch (generalError) {
+        console.error("Error fetching course details:", generalError);
+        setError(generalError.message || "Failed to load course details.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
+    fetchCourseData();
+  }, [courseId, isAuthenticated, showModal]);
 
-    fetchCourseData()
-  }, [courseId, isAuthenticated, showModal])
-
-
-  // enroll in course
-
-   const handleEnroll = async () => {
+  const handleEnroll = async () => {
     if (!isAuthenticated) {
       showModal({
         isOpen: true,
@@ -90,7 +88,7 @@ function CourseDetailsPage() {
         message: "You have successfully enrolled in the course.",
         type: "success",
       });
-      setIsEnrolled(true); 
+      setIsEnrolled(true);
       navigate(`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`, { replace: true });
     } catch (err) {
       showModal({
@@ -104,7 +102,7 @@ function CourseDetailsPage() {
 
   const handleAddReview = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated || !isEnrolled || user.role === 'instructor') { 
+    if (!isAuthenticated || !isEnrolled || user.role === 'instructor') {
       showModal({
         isOpen: true,
         title: "Permission Denied",
@@ -126,7 +124,7 @@ function CourseDetailsPage() {
     setReviewLoading(true);
     try {
       await addReview(courseId, { rating: newReviewRating, comment: newReviewText });
-      const updatedReviews = await getReviews(courseId); 
+      const updatedReviews = await getReviews(courseId);
       setReviews(updatedReviews.reviews);
       setNewReviewText('');
       setNewReviewRating(5);
@@ -149,97 +147,95 @@ function CourseDetailsPage() {
   };
 
   if (loading) return <Loader />;
-  if (error) return <div className="text-accent-error text-center p-spacing-lg text-lg">{error}</div>;
+  if (error) return <div className="text-accent-error text-center p-lg text-lg">{error}</div>;
   if (!course) return null;
 
-
   return (
-     <div className="min-h-screen bg-background-main p-spacing-lg font-sans">
-        <div className="container mx-auto bg-background-card p-spacing-xl rounded-lg shadow-md">
+    <div className="min-h-screen bg-background-main p-lg font-sans">
+      <div className="container mx-auto bg-background-card p-xl rounded-lg shadow-md">
         {/* Course Header */}
-          <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-spacing-lg mb-spacing-xl">
-            <img
-              src={course.imageUrl || 'https://placehold.co/600x400/cccccc/333333?text=Course+Image'}
-              alt={course.title}
-              className="w-full md:w-1/3 rounded-lg shadow-md object-cover mb-spacing-md md:mb-0"
-            />
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-4xl font-bold text-text-primary mb-spacing-sm">{course.title}</h1>
-              <p className="text-lg text-text-secondary mb-spacing-md">{course.description}</p>
-              <div className="flex items-center justify-center md:justify-start space-x-spacing-md mb-spacing-md">
-                <span className="text-xl font-bold text-primary-main">
-                  {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
-                </span>
-                <span className="text-text-secondary text-md">
-                  Rating: {course.averageRating ? course.averageRating.toFixed(1) : 'N/A'} ({course.numberOfReviews || 0} reviews)
-                </span>
-              </div>
-              <p className="text-text-primary text-md mb-spacing-md">
-                Instructor: {course.creatorId?.firstName} {course.creatorId?.lastName}
-              </p>
-
-              {!isEnrolled ? (
-                <Button
-                  text={course.price === 0 ? 'Enroll Now' : 'Buy Now'}
-                  onClick={handleEnroll}
-                  className="mt-spacing-md px-lg py-md text-lg"
-                />
-              ) : (
-                <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
-                  <Button text="Go to Course" className="mt-spacing-md px-lg py-md text-lg" />
-                </Link>
-              )}
+        <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-lg mb-xl">
+          <img
+            src={course.imageUrl || 'https://placehold.co/600x400/cccccc/333333?text=Course+Image'}
+            alt={course.title}
+            className="w-full md:w-1/3 rounded-lg shadow-md object-cover mb-md md:mb-0"
+          />
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="text-4xl font-bold text-text-primary mb-sm">{course.title}</h1>
+            <p className="text-lg text-text-secondary mb-md">{course.description}</p>
+            <div className="flex items-center justify-center md:justify-start space-x-md mb-md">
+              <span className="text-xl font-bold text-primary-main">
+                {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
+              </span>
+              <span className="text-text-secondary text-md">
+                Rating: {course.averageRating ? course.averageRating.toFixed(1) : 'N/A'} ({course.numberOfReviews || 0} reviews)
+              </span>
             </div>
+            <p className="text-text-primary text-md mb-md">
+              Instructor: {course.creatorId?.firstName} {course.creatorId?.lastName}
+            </p>
+
+            {!isEnrolled ? (
+              <Button
+                text={course.price === 0 ? 'Enroll Now' : 'Buy Now'}
+                onClick={handleEnroll}
+                className="mt-md px-lg py-md text-lg"
+              />
+            ) : (
+              <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
+                <Button text="Go to Course" className="mt-md px-lg py-md text-lg" />
+              </Link>
+            )}
           </div>
+        </div>
 
         {/* Course Curriculum */}
-        <div className="mb-spacing-xl">
-            <h2 className="text-3xl font-bold text-text-primary mb-spacing-md border-b pb-spacing-sm">Course Curriculum</h2>
-          
-            {course.sections && course.sections.length > 0 ? (
-              <div className="space-y-spacing-md">
-                  {course.sections.map((section) => (
-                      <div key={section._id} className="bg-background-main p-spacing-md rounded-md shadow-sm border border-gray-100">
-                          <h3 className="text-xl font-semibold text-text-primary mb-spacing-sm">{section.title}</h3>
-                          {section.lectures && section.lectures.length > 0 ? (
-                              <ul className="space-y-2">
-                                {section.lectures.map((lecture) => (
-                                  <li key={lecture._id} className="flex justify-between items-center text-text-secondary">
-                                    <span>{lecture.order}. {lecture.title} ({lecture.type})</span>
-                                    {isEnrolled && lecture.isCompleted && (
-                                      <span className="text-accent-success text-sm">Completed</span>
-                                    )}
-                                    {isEnrolled && !lecture.isCompleted && (
-                                        <span className="text-primary-main text-sm">Not Completed</span>
-                                    )}
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                            <p className="text-text-secondary text-sm">No lectures in this section yet.</p>
+        <div className="mb-xl">
+          <h2 className="text-3xl font-bold text-text-primary mb-md border-b pb-sm">Course Curriculum</h2>
+          {course.sections && course.sections.length > 0 ? (
+            <div className="space-y-md">
+              {course.sections.map((section) => (
+                <div key={section._id} className="bg-background-main p-md rounded-md shadow-sm border border-gray-100">
+                  <h3 className="text-xl font-semibold text-text-primary mb-sm">{section.title}</h3>
+                  {section.lectures && section.lectures.length > 0 ? (
+                    <ul className="space-y-2">
+                      {section.lectures.map((lecture) => (
+                        <li key={lecture._id} className="flex justify-between items-center text-text-secondary">
+                          <span>{lecture.order}. {lecture.title} ({lecture.type})</span>
+                          {isEnrolled && lecture.isCompleted && (
+                            <span className="text-accent-success text-sm">Completed</span>
                           )}
-                        </div>
+                          {isEnrolled && !lecture.isCompleted && (
+                              <span className="text-primary-main text-sm">Not Completed</span>
+                          )}
+                        </li>
                       ))}
-                  </div>
-                ) : (
-                <p className="text-text-secondary text-lg">No curriculum available yet.</p>
-              )}
+                    </ul>
+                  ) : (
+                    <p className="text-text-secondary text-sm">No lectures in this section yet.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-text-secondary text-lg">No curriculum available yet.</p>
+          )}
         </div>
 
         {/* Course Reviews */}
         <div>
-          <h2 className="text-3xl font-bold text-text-primary mb-spacing-md border-b pb-spacing-sm">Student Reviews</h2>
+          <h2 className="text-3xl font-bold text-text-primary mb-md border-b pb-sm">Student Reviews</h2>
           {reviews.length === 0 ? (
-            <p className="text-text-secondary text-lg mb-spacing-lg">No reviews yet. Be the first to review this course!</p>
+            <p className="text-text-secondary text-lg mb-lg">No reviews yet. Be the first to review this course!</p>
           ) : (
-            <div className="space-y-spacing-md mb-spacing-lg">
+            <div className="space-y-md mb-lg">
               {reviews.map((review) => (
-                <div key={review._id} className="bg-background-main p-spacing-md rounded-md shadow-sm border border-gray-100">
+                <div key={review._id} className="bg-background-main p-md rounded-md shadow-sm border border-gray-100">
                   <div className="flex items-center mb-2">
                     <img
                       src={review.userId?.profilePicture || 'https://placehold.co/40x40/cccccc/333333?text=U'}
                       alt={review.userId?.firstName}
-                      className="w-10 h-10 rounded-full mr-3"
+                      className="w-10 h-10 rounded-full mr-3 object-cover"
                     />
                     <div>
                       <p className="font-semibold text-text-primary">{review.userId?.firstName} {review.userId?.lastName}</p>
@@ -257,8 +253,8 @@ function CourseDetailsPage() {
 
           {/* Add Review Form */}
           {isAuthenticated && isEnrolled && user.role === 'learner' && (
-            <div className="bg-background-main p-spacing-md rounded-md shadow-sm border border-gray-100">
-              <h3 className="text-2xl font-bold text-text-primary mb-spacing-md">Add Your Review</h3>
+            <div className="bg-background-main p-md rounded-md shadow-sm border border-gray-100">
+              <h3 className="text-2xl font-bold text-text-primary mb-md">Add Your Review</h3>
               <form onSubmit={handleAddReview} className="space-y-4">
                 <div>
                   <label htmlFor="rating" className="block text-text-primary text-sm font-semibold mb-2">
@@ -303,7 +299,7 @@ function CourseDetailsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default CourseDetailsPage
+export default CourseDetailsPage;
