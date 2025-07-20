@@ -26,13 +26,13 @@ function Login() {
         navigate(PROTECTED_ROUTES.dashboard, { replace: true });
       }
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred. Please try again.');
+      setError(err.message || 'Please check your input.');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background-main p-4 font-inter">
-      <div className="bg-background-card p-8 rounded-lg shadow-lg w-full max-w-md border border-gray-200">
+      <div className="bg-background-card p-8 rounded-md shadow-lg w-full max-w-md border border-gray-200">
         <h2 className="text-3xl font-bold text-center text-primary-dark mb-6">Login to Your Account</h2>
         {error && <p className="text-accent-error text-center mb-4 text-sm">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
