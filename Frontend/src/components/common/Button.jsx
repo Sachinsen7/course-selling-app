@@ -1,13 +1,13 @@
-import PropTypes from "prop-types";
-import { motion } from "framer-motion";
+import PropTypes from 'prop-types';
+import { motion } from 'framer-motion';
 
 function Button({ text, onClick, className, disabled }) {
   return (
     <motion.button
-      className={`px-spacing-md py-spacing-sm rounded font-sans font-semibold bg-primary-main text-background-card hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1 ${className}`}
+      className={`px-md py-sm rounded-md font-sans  bg-primary-main text-background-card hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-main focus:ring-offset-2 ${className}`}
       onClick={onClick}
       disabled={disabled}
-      whileHover={{ scale: disabled ? 1 : 1.05 }}
+      whileHover={{ scale: disabled ? 1 : 1 }}
       whileTap={{ scale: disabled ? 1 : 0.95 }}
       transition={{ duration: 0.2 }}
       aria-label={text}
@@ -25,8 +25,8 @@ Button.propTypes = {
 };
 
 Button.defaultProps = {
-  className: "",
-  onclick: () => {},
+  className: '',
+  onClick: () => {},
   disabled: false,
 };
 
