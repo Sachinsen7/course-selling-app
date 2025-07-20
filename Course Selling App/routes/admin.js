@@ -46,6 +46,19 @@ const updateCategorySchema = z.object({
     message: "At least one field (name, description, imageUrl) must be provided for update."
 });
 
+
+// Get all categories
+adminRouter.get("/categories", async (req, res) => {
+    try {
+        const categories = await CategoryModel.find({});
+        res.status(200).json({ message: "Categories fetched successfully", categories });
+    } catch (error) {
+        console.error("Error fetching categories:", error);
+        res.status(500).json({ message: "An error occurred while fetching categories", error: error.message });
+    }
+});
+
+
 adminRouter.use(authMiddleware)
 adminRouter.use(adminMiddleware)
 
@@ -289,7 +302,7 @@ adminRouter.delete("/course/:courseId", async (req, res) => {
 
 
 
-// Category Management Routes
+
 
 // Create a new category
 adminRouter.post("/category", async (req, res) => {
@@ -314,16 +327,6 @@ adminRouter.post("/category", async (req, res) => {
     }
 });
 
-// Get all categories
-adminRouter.get("/categories", async (req, res) => {
-    try {
-        const categories = await CategoryModel.find({});
-        res.status(200).json({ message: "Categories fetched successfully", categories });
-    } catch (error) {
-        console.error("Error fetching categories:", error);
-        res.status(500).json({ message: "An error occurred while fetching categories", error: error.message });
-    }
-});
 
 
 // Get a specific category by ID

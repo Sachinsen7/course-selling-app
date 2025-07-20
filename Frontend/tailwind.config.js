@@ -1,8 +1,11 @@
-import theme from "./src/utils/theme";
-import defaultTheme from 'tailwindcss/defaultTheme'
+import theme from './src/utils/theme';
+import defaultTheme from 'tailwindcss/defaultTheme';
 
 export default {
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -12,10 +15,8 @@ export default {
         text: theme.colors.text,
         accent: theme.colors.accent,
       },
-      fontFamily: {
-        inter: theme.fonts.primary,
-
-        sans: ['Inter', ...defaultTheme.fontFamily.sans]
+      fontFamily: { 
+        sans: ['Poppins', ...defaultTheme.fontFamily.sans],
       },
       spacing: {
         sm: theme.spacing.sm,

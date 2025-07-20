@@ -19,7 +19,7 @@ const userSignupSchema = z.object({
     .string()
     .min(2, "Last name must be at least 2 characters long")
     .trim(),
-  role: z.enum(["learner", "instructor"]).default("learner"),
+  role: z.enum(["learner", "instructor", 'admin']).default("learner"),
 });
 
 // Zod schema for user signin

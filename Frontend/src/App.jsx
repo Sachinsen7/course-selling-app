@@ -4,7 +4,6 @@ import { useAuth } from './context/AuthContext'
 import HomePage from './pages/HomePage'
 import { PUBLIC_ROUTES, AUTH_ROUTES, PROTECTED_ROUTES } from './routes'
 import CourseListingPage from './pages/CourseListingPage'
-import ResultPage from './pages/ResultPage'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Login from './pages/Login'
@@ -20,9 +19,11 @@ import NotFound from './pages/NotFound'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import CourseDetailsPage from './pages/CourseDetailsPage'
+import SearchBar from './components/user/SearchBar'
+import InstructorCoursePage from './pages/InstructorCoursePage'
 
 const PrivateRoutes = ({children, allowedRoles = []}) => {
-  const [isAuthenticated, user, loading] = useAuth()
+  const {isAuthenticated, user, loading} = useAuth()
 
 
   if(loading){
@@ -48,14 +49,14 @@ const PrivateRoutes = ({children, allowedRoles = []}) => {
 function App() {
  return (
      <div className="min-h-screen flex flex-col font-inter">
-      <Navbar /> {/* Global Navigation Bar */}
-      <main className="flex-grow"> {/* Main content area */}
+      <Navbar /> 
+      <main className="flex-grow"> 
         <Routes>
           {/* Public Routes */}
           <Route path={PUBLIC_ROUTES.home} element={<HomePage />} />
           <Route path={PUBLIC_ROUTES.courseListing} element={<CourseListingPage />} />
           <Route path={PUBLIC_ROUTES.courseDetail} element={<CourseDetailsPage />} /> 
-          <Route path={PUBLIC_ROUTES.searchResult} element={<ResultPage />} />
+          <Route path={PUBLIC_ROUTES.searchBar} element={<SearchBar />} />
           <Route path={PUBLIC_ROUTES.about} element={<About />} />
           <Route path={PUBLIC_ROUTES.contact} element={<Contact />} />
 
@@ -65,6 +66,22 @@ function App() {
           <Route path={AUTH_ROUTES.ForgotPassword} element={<ForgotPassword />} />
 
           {/* Protected Routes - Wrapped with PrivateRoutes */}
+           <Route
+              path="/instructor/course/new"
+              element={
+                <PrivateRoutes allowedRoles={['instructor']}> {/* Only instructors can create */}
+                  <InstructorCoursePage />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/instructor/course/edit/:id"
+              element={
+                <PrivateRoutes allowedRoles={['instructor']}> {/* Only instructors can edit */}
+                  <InstructorCoursePage />
+                </PrivateRoutes>
+              }
+            />
           <Route
             path={PROTECTED_ROUTES.dashboard}
             element={

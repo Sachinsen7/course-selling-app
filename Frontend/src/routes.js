@@ -2,7 +2,7 @@ export const PUBLIC_ROUTES = {
     home: "/",
     courseListing: "/course",
     courseDetail: "/course/:id",
-    searchResult: "/search",
+    searchBar: "/search",
     about: "/about",
     contact: "/contact"
 };

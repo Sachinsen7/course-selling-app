@@ -72,7 +72,7 @@ export const getCourses = async (filters = {}) => {
 export const getCourseById = async (id) => {
   try {
     const response = await api.get(`/search/courses/${id}`);
-    return response.data; // Expects { message, courses: [course_object] }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to fetch course details.");
   }
@@ -283,5 +283,15 @@ export const createCategory = async (categoryData) => {
     return response.data; // Expects { message, category }
   } catch (error) {
     throw handleApiError(error, "Failed to create category.");
+  }
+};
+
+
+export const getAllCategories = async () => {
+  try {
+    const response = await api.get("/admin/categories"); 
+    return response.data; 
+  } catch (error) {
+    throw handleApiError(error, "Failed to fetch categories.");
   }
 };
