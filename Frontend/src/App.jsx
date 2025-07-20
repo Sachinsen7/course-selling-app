@@ -20,6 +20,7 @@ import NotFound from './pages/NotFound'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import CourseDetailsPage from './pages/CourseDetailsPage'
+import SearchBar from './components/user/SearchBar'
 
 const PrivateRoutes = ({children, allowedRoles = []}) => {
   const [isAuthenticated, user, loading] = useAuth()
@@ -55,7 +56,7 @@ function App() {
           <Route path={PUBLIC_ROUTES.home} element={<HomePage />} />
           <Route path={PUBLIC_ROUTES.courseListing} element={<CourseListingPage />} />
           <Route path={PUBLIC_ROUTES.courseDetail} element={<CourseDetailsPage />} /> 
-          <Route path={PUBLIC_ROUTES.searchResult} element={<ResultPage />} />
+          <Route path={PUBLIC_ROUTES.searchBar} element={<SearchBar />} />
           <Route path={PUBLIC_ROUTES.about} element={<About />} />
           <Route path={PUBLIC_ROUTES.contact} element={<Contact />} />
 
