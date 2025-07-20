@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getInstructorCourses, deleteInstructorCourse } from '../services/api';
+import { getInstructorCourses, deleteInstructorCourse, getCourseById } from '../services/api'; 
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
+import Modal from '../components/common/Model'; 
 import { PUBLIC_ROUTES } from '../routes';
 
 function InstructorDashboard() {
@@ -13,6 +14,13 @@ function InstructorDashboard() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    courseIdToDelete: null,
+    courseTitleToDelete: '',
+  });
 
   useEffect(() => {
     if (!authLoading && user && user.role === 'instructor') {
@@ -24,7 +32,7 @@ function InstructorDashboard() {
 
   const fetchInstructorCourses = async () => {
     setLoading(true);
-    setError(null); 
+    setError(null);
     try {
       const data = await getInstructorCourses();
       setCourses(data.courses);
@@ -41,34 +49,43 @@ function InstructorDashboard() {
     }
   };
 
-  const handleDeleteCourse = async (courseId, courseTitle) => {
-    if (window.confirm(`Are you sure you want to delete the course "${courseTitle}"? This action cannot be undone.`)) {
-      setLoading(true);
-      try {
-        await deleteInstructorCourse(courseId);
-        showModal({
-          isOpen: true,
-          title: "Course Deleted",
-          message: `"${courseTitle}" has been successfully deleted.`,
-          type: "success",
-        });
-        fetchInstructorCourses();
-      } catch (err) {
-        showModal({
-          isOpen: true,
-          title: "Deletion Failed",
-          message: err.message || "Failed to delete the course.",
-          type: "error",
-        });
-      } finally {
-        setLoading(false);
-      }
+  // Function to open the confirmation modal
+  const openConfirmDeleteModal = (courseId, courseTitle) => {
+    setConfirmModal({
+      isOpen: true,
+      courseIdToDelete: courseId,
+      courseTitleToDelete: courseTitle,
+    });
+  };
+
+  // Function to handle the actual deletion after confirmation
+  const confirmAndDeleteCourse = async () => {
+    setConfirmModal({ ...confirmModal, isOpen: false }); 
+    setLoading(true);
+    try {
+      await deleteInstructorCourse(confirmModal.courseIdToDelete);
+      showModal({
+        isOpen: true,
+        title: "Course Deleted",
+        message: `"${confirmModal.courseTitleToDelete}" has been successfully deleted.`,
+        type: "success",
+      });
+      fetchInstructorCourses(); 
+    } catch (err) {
+      showModal({
+        isOpen: true,
+        title: "Deletion Failed",
+        message: err.message || "Failed to delete the course.",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   if (authLoading || loading) return <Loader />;
   if (error) return <div className="text-accent-error text-center p-lg text-lg">{error}</div>;
-  if (!user || user.role !== 'instructor') return null; 
+  if (!user || user.role !== 'instructor') return null;
 
   return (
     <div className="min-h-screen bg-background-main p-lg font-sans">
@@ -77,7 +94,7 @@ function InstructorDashboard() {
         <p className="text-lg text-text-secondary text-center mb-xl">Manage your courses and content.</p>
 
         <div className="mb-xl text-center">
-          <Link to="/instructor/course/new"> 
+          <Link to="/instructor/course/new">
             <Button text="Create New Course" className="px-lg py-md" />
           </Link>
         </div>
@@ -103,7 +120,7 @@ function InstructorDashboard() {
                   </Link>
                   <Button
                     text="Delete"
-                    onClick={() => handleDeleteCourse(course._id, course.title)}
+                    onClick={() => openConfirmDeleteModal(course._id, course.title)}
                     className="bg-accent-error hover:bg-red-700 text-white w-full sm:w-auto"
                   />
                 </div>
@@ -112,6 +129,28 @@ function InstructorDashboard() {
           </div>
         )}
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <Modal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        title="Confirm Deletion"
+        message={`Are you sure you want to delete the course "${confirmModal.courseTitleToDelete}"? This action cannot be undone.`}
+        type="warning"
+      >
+        <div className="flex justify-center space-x-md mt-4">
+          <Button
+            text="Cancel"
+            onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+            className="bg-gray-300 text-gray-800 hover:bg-gray-400"
+          />
+          <Button
+            text="Delete"
+            onClick={confirmAndDeleteCourse}
+            className="bg-accent-error hover:bg-red-700"
+          />
+        </div>
+      </Modal>
     </div>
   );
 }
