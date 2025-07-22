@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom'; 
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getCourseById, getEnrolledCourseDetails, enrollInCourse, addReview, getReviews } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
-import { PROTECTED_ROUTES } from '../routes'; 
+import CourseCurriculum from '../components/course/CourseCurriculum'; 
+import Review from '../components/course/Review'; 
+import InstructorProfile from '../components/InstructorProfile'; 
+import { PROTECTED_ROUTES } from '../routes';
 
 function CourseDetailsPage() {
   const { id: courseId } = useParams();
@@ -20,7 +23,6 @@ function CourseDetailsPage() {
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [reviewLoading, setReviewLoading] = useState(false);
 
-  // Fetch course details and reviews
   useEffect(() => {
     const fetchCourseData = async () => {
       setLoading(true);
@@ -37,12 +39,12 @@ function CourseDetailsPage() {
           } catch (enrollmentError) {
             console.warn("Not enrolled or error fetching enrolled details, falling back to public:", enrollmentError.message);
             const publicResponse = await getCourseById(courseId);
-            courseData = publicResponse.course; 
+            courseData = publicResponse.course;
             enrolledStatus = false;
           }
         } else {
           const publicResponse = await getCourseById(courseId);
-          courseData = publicResponse.course; 
+          courseData = publicResponse.course;
           enrolledStatus = false;
         }
 
@@ -54,7 +56,6 @@ function CourseDetailsPage() {
         setCourse(courseData);
         setIsEnrolled(enrolledStatus);
 
-        // Fetch reviews
         const reviewData = await getReviews(courseId);
         setReviews(reviewData.reviews || []);
 
@@ -102,7 +103,8 @@ function CourseDetailsPage() {
 
   const handleAddReview = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated || !isEnrolled || user.role === 'instructor') {
+    // Check if user is logged in, is enrolled, and is a learner (not an instructor)
+    if (!isAuthenticated || !isEnrolled || user?.role !== 'learner') {
       showModal({
         isOpen: true,
         title: "Permission Denied",
@@ -124,8 +126,8 @@ function CourseDetailsPage() {
     setReviewLoading(true);
     try {
       await addReview(courseId, { rating: newReviewRating, comment: newReviewText });
-      const updatedReviews = await getReviews(courseId);
-      setReviews(updatedReviews.reviews);
+      const reviewData = await getReviews(courseId); // Re-fetch all reviews
+      setReviews(reviewData.reviews);
       setNewReviewText('');
       setNewReviewRating(5);
       showModal({
@@ -152,11 +154,11 @@ function CourseDetailsPage() {
 
   return (
     <div className="min-h-screen bg-background-main p-lg font-sans">
-      <div className="container mx-auto bg-background-card p-xl rounded-lg shadow-md">
+      <div className="container mx-auto bg-background-card p-xl rounded-lg shadow-md border border-gray-100">
         {/* Course Header */}
         <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-lg mb-xl">
           <img
-            src={course.imageUrl || 'https://placehold.co/600x400/cccccc/333333?text=Course+Image'}
+            src={course.imageUrl || 'https://placehold.co/600x400/F9F3EF/1B3C53?text=Course+Image'}
             alt={course.title}
             className="w-full md:w-1/3 rounded-lg shadow-md object-cover mb-md md:mb-0"
           />
@@ -165,15 +167,15 @@ function CourseDetailsPage() {
             <p className="text-lg text-text-secondary mb-md">{course.description}</p>
             <div className="flex items-center justify-center md:justify-start space-x-md mb-md">
               <span className="text-xl font-bold text-primary-main">
-                {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
+                {course.price === 0 ? 'Free' : `$${course.price?.toFixed(2)}`}
               </span>
               <span className="text-text-secondary text-md">
                 Rating: {course.averageRating ? course.averageRating.toFixed(1) : 'N/A'} ({course.numberOfReviews || 0} reviews)
               </span>
             </div>
-            <p className="text-text-primary text-md mb-md">
-              Instructor: {course.creatorId?.firstName} {course.creatorId?.lastName}
-            </p>
+            
+            {/* Display Instructor Profile component */}
+            {course.creatorId && <InstructorProfile instructor={course.creatorId} />}
 
             {!isEnrolled ? (
               <Button
@@ -189,40 +191,13 @@ function CourseDetailsPage() {
           </div>
         </div>
 
-        {/* Course Curriculum */}
+        {/* Course Curriculum - Using the CourseCurriculum component */}
         <div className="mb-xl">
           <h2 className="text-3xl font-bold text-text-primary mb-md border-b pb-sm">Course Curriculum</h2>
-          {course.sections && course.sections.length > 0 ? (
-            <div className="space-y-md">
-              {course.sections.map((section) => (
-                <div key={section._id} className="bg-background-main p-md rounded-md shadow-sm border border-gray-100">
-                  <h3 className="text-xl font-semibold text-text-primary mb-sm">{section.title}</h3>
-                  {section.lectures && section.lectures.length > 0 ? (
-                    <ul className="space-y-2">
-                      {section.lectures.map((lecture) => (
-                        <li key={lecture._id} className="flex justify-between items-center text-text-secondary">
-                          <span>{lecture.order}. {lecture.title} ({lecture.type})</span>
-                          {isEnrolled && lecture.isCompleted && (
-                            <span className="text-accent-success text-sm">Completed</span>
-                          )}
-                          {isEnrolled && !lecture.isCompleted && (
-                              <span className="text-primary-main text-sm">Not Completed</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-text-secondary text-sm">No lectures in this section yet.</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-text-secondary text-lg">No curriculum available yet.</p>
-          )}
+          <CourseCurriculum sections={course.sections} />
         </div>
 
-        {/* Course Reviews */}
+        {/* Course Reviews - Using the Review component */}
         <div>
           <h2 className="text-3xl font-bold text-text-primary mb-md border-b pb-sm">Student Reviews</h2>
           {reviews.length === 0 ? (
@@ -230,29 +205,13 @@ function CourseDetailsPage() {
           ) : (
             <div className="space-y-md mb-lg">
               {reviews.map((review) => (
-                <div key={review._id} className="bg-background-main p-md rounded-md shadow-sm border border-gray-100">
-                  <div className="flex items-center mb-2">
-                    <img
-                      src={review.userId?.profilePicture || 'https://placehold.co/40x40/cccccc/333333?text=U'}
-                      alt={review.userId?.firstName}
-                      className="w-10 h-10 rounded-full mr-3 object-cover"
-                    />
-                    <div>
-                      <p className="font-semibold text-text-primary">{review.userId?.firstName} {review.userId?.lastName}</p>
-                      <p className="text-sm text-text-secondary">Rating: {review.rating} / 5</p>
-                    </div>
-                  </div>
-                  <p className="text-text-primary">{review.comment}</p>
-                  <p className="text-xs text-text-secondary mt-2">
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
+                <Review key={review._id} review={review} />
               ))}
             </div>
           )}
 
           {/* Add Review Form */}
-          {isAuthenticated && isEnrolled && user.role === 'learner' && (
+          {isAuthenticated && isEnrolled && user?.role === 'learner' && (
             <div className="bg-background-main p-md rounded-md shadow-sm border border-gray-100">
               <h3 className="text-2xl font-bold text-text-primary mb-md">Add Your Review</h3>
               <form onSubmit={handleAddReview} className="space-y-4">
