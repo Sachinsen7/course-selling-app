@@ -46,7 +46,7 @@ function Navbar() {
               )}
               {user.role === 'admin' && (
                 <Link
-                  to="/admin/dashboard" // Assuming you'll have an admin dashboard route
+                  to="/admin/dashboard" 
                   className="text-background-card hover:text-primary-light transition-colors duration-200"
                 >
                   Admin Dashboard
@@ -54,14 +54,14 @@ function Navbar() {
               )}
               {user.role === 'learner' && (
                  <Link
-                    to={PROTECTED_ROUTES.dashboard} // Learner dashboard
+                    to={PROTECTED_ROUTES.dashboard}
                     className="text-background-card hover:text-primary-light transition-colors duration-200"
                   >
                     My Dashboard
                   </Link>
               )}
 
-              {/* User Profile Link - always visible if authenticated */}
+        
               <Link
                 to={PROTECTED_ROUTES.profile}
                 className="text-background-card hover:text-primary-light transition-colors duration-200"
@@ -69,7 +69,7 @@ function Navbar() {
                 Profile
               </Link>
 
-              {/* Display user's first name */}
+              
               <span className="text-primary-light font-medium">
                 Hello, {user.firstName || user.email}!
               </span>
