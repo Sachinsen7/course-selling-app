@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
 import CourseCurriculum from '../components/course/CourseCurriculum'; 
-import Review from '../components/course/Review'; 
+import Review from '../components/course/Review';
 import InstructorProfile from '../components/InstructorProfile'; 
 import { PROTECTED_ROUTES } from '../routes';
 
@@ -103,7 +103,7 @@ function CourseDetailsPage() {
 
   const handleAddReview = async (e) => {
     e.preventDefault();
-    // Check if user is logged in, is enrolled, and is a learner (not an instructor)
+
     if (!isAuthenticated || !isEnrolled || user?.role !== 'learner') {
       showModal({
         isOpen: true,
@@ -126,7 +126,7 @@ function CourseDetailsPage() {
     setReviewLoading(true);
     try {
       await addReview(courseId, { rating: newReviewRating, comment: newReviewText });
-      const reviewData = await getReviews(courseId); // Re-fetch all reviews
+      const reviewData = await getReviews(courseId); 
       setReviews(reviewData.reviews);
       setNewReviewText('');
       setNewReviewRating(5);
@@ -155,7 +155,7 @@ function CourseDetailsPage() {
   return (
     <div className="min-h-screen bg-background-main p-lg font-sans">
       <div className="container mx-auto bg-background-card p-xl rounded-lg shadow-md border border-gray-100">
-        {/* Course Header */}
+
         <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-lg mb-xl">
           <img
             src={course.imageUrl || 'https://placehold.co/600x400/F9F3EF/1B3C53?text=Course+Image'}
@@ -174,8 +174,13 @@ function CourseDetailsPage() {
               </span>
             </div>
             
-            {/* Display Instructor Profile component */}
-            {course.creatorId && <InstructorProfile instructor={course.creatorId} />}
+  
+            {course.creatorId && (
+              <div className="mt-md"> 
+                <h3 className="text-text-primary text-md font-semibold mb-sm">Taught by:</h3>
+                <InstructorProfile instructor={course.creatorId} />
+              </div>
+            )}
 
             {!isEnrolled ? (
               <Button
@@ -191,13 +196,13 @@ function CourseDetailsPage() {
           </div>
         </div>
 
-        {/* Course Curriculum - Using the CourseCurriculum component */}
+
         <div className="mb-xl">
           <h2 className="text-3xl font-bold text-text-primary mb-md border-b pb-sm">Course Curriculum</h2>
           <CourseCurriculum sections={course.sections} />
         </div>
 
-        {/* Course Reviews - Using the Review component */}
+
         <div>
           <h2 className="text-3xl font-bold text-text-primary mb-md border-b pb-sm">Student Reviews</h2>
           {reviews.length === 0 ? (

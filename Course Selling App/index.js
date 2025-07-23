@@ -16,6 +16,7 @@ const searchRouter = require("./routes/search");
 const paymentRouter = require("./routes/payments");
 const reviewRouter = require("./routes/review");
 const adminRouter = require("./routes/admin")
+const userRouter = require("./routes/user")
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api/search", searchRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/admin", adminRouter)
+app.use("/api/user", userRouter)
 
 
 app.use((err, req, res, next) => {

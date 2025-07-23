@@ -56,6 +56,36 @@ export const loginUser = async (userData) => {
   }
 };
 
+
+// --- USER API CALLS --- 
+
+export const getUserProfile = async () => {
+  try {
+    const response = await api.get("/user/profile");
+    return response.data; 
+  } catch (error) {
+    throw handleApiError(error, "Failed to fetch user profile.");
+  }
+};
+
+export const updateUserProfile = async (userId, updateData) => {
+  try {
+    const response = await api.put("/user/profile", updateData);
+    return response.data; 
+  } catch (error) {
+    throw handleApiError(error, "Failed to update user profile.");
+  }
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+  try {
+    const response = await api.put("/user/change-password", { currentPassword, newPassword });
+    return response.data; 
+  } catch (error) {
+    throw handleApiError(error, "Failed to change password.");
+  }
+};
+
 // --- COURSE DISCOVERY & DETAILS API CALLS ---
 
 // Function to get courses 
