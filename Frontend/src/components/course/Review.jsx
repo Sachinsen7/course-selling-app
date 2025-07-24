@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { motion } from 'framer-motion';
 
 function Review({ review }) {
   if (!review) {
@@ -7,23 +8,39 @@ function Review({ review }) {
   }
 
   return (
-    <div className="bg-background-main p-md rounded-md shadow-sm border border-gray-100"> 
-      <div className="flex items-center mb-2">
+    <motion.div
+      className="bg-background-card p-md rounded-md shadow-md border border-secondary-light"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex items-center mb-sm">
         <img
-          src={review.userId?.profilePicture || 'https://placehold.co/40x40/F9F3EF/1B3C53?text=U'}
+          src={review.userId?.profilePicture || 'https://via.placeholder.com/40x40/F9F3EF/1B3C53?text=U'}
           alt={review.userId?.firstName || 'User'}
-          className="w-10 h-10 rounded-full mr-3 object-cover"
+          className="w-10 h-10 rounded-full mr-md object-cover border border-secondary-light"
         />
-        <div>
-          <p className="font-semibold text-text-primary">{review.userId?.firstName} {review.userId?.lastName || review.userId?.email}</p>
-          <p className="text-sm text-text-secondary">Rating: {review.rating} / 5</p>
+        <div className="flex-1">
+          <p className="font-semibold text-text-primary text-md">
+            {review.userId?.firstName} {review.userId?.secondName || review.userId?.email}
+          </p>
+          <div className="flex items-center space-x-1">
+            {[...Array(5)].map((_, i) => (
+              <span
+                key={i}
+                className={`text-lg ${i < review.rating ? 'text-accent-warning' : 'text-text-secondary'}`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-      <p className="text-text-primary">{review.comment}</p>
-      <p className="text-xs text-text-secondary mt-2">
-        {new Date(review.createdAt).toLocaleDateString()}
+      <p className="text-text-primary text-sm mb-sm">{review.comment}</p>
+      <p className="text-xs text-text-secondary">
+        {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -36,7 +53,7 @@ Review.propTypes = {
     userId: PropTypes.shape({
       _id: PropTypes.string,
       firstName: PropTypes.string,
-      lastName: PropTypes.string,
+      lastName: PropTypes.string, // Aligned with backend schema
       email: PropTypes.string,
       profilePicture: PropTypes.string,
     }),
