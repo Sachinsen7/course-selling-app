@@ -113,66 +113,94 @@ enrollmentRouter.get("/purchased-courses", authMiddleware, async (req, res) => {
 
 // Route to get details of a specific enrolled course
 enrollmentRouter.get("/purchased-courses/:courseId", authMiddleware, async (req, res) => {
-    if (req.userRole !== 'learner' && req.userRole !== 'instructor') {
-        return res.status(403).json({ message: "Access denied." });
+  if (req.userRole !== "learner" && req.userRole !== "instructor") {
+    return res.status(403).json({ message: "Access denied." });
+  }
+
+  const userId = req.userId;
+  const courseId = req.params.courseId;
+
+  if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ message: "Invalid course ID format." });
+  }
+
+  try {
+    const purchase = await PurchaseModel.findOne({ userId, courseId });
+    if (!purchase) {
+      return res.status(404).json({ message: "Course not purchased by this user." });
     }
 
-    const userId = req.userId;
-    const courseId = req.params.courseId;
+    const course = await CourseModel.findById(courseId)
+      .populate("creatorId", "firstName lastName profilePicture")
+      .populate({
+        path: "sections",
+        select: "title order lectures",
+        options: { sort: { order: 1 } },
+        populate: {
+          path: "lectures",
+          select: "title type contentUrl textContent duration order isPublished quizId assignmentSubmissionId",
+        },
+      });
 
-    if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
-        return res.status(400).json({ message: "Invalid course ID format." });
+    if (!course) {
+      return res.status(404).json({ message: "Course not found." });
     }
 
-    try {
-        const purchase = await PurchaseModel.findOne({ userId, courseId });
-        if (!purchase) {
-            return res.status(404).json({ message: "Course not purchased by this user." });
-        }
+    // Manually sort lectures by order
+    const sortedCourse = course.toObject();
+    sortedCourse.sections.forEach((section) => {
+      section.lectures.sort((a, b) => a.order - b.order);
+    });
 
-        const course = await CourseModel.findById(courseId)
-            .populate('creatorId', 'firstName lastName profilePicture')
-            .populate({
-                path: 'sections',
-                select: 'title order lectures',
-                options: { sort: { order: 1 } },
-                populate: {
-                    path: 'lectures',
-                    select: 'title type contentUrl textContent duration order isPublished quizId assignmentSubmissionId',
-                    options: { sort: { order: 1 } }
-                }
-            });
+    const userProgress = await UserLectureProgressModel.find({ userId, courseId });
+    const progressMap = new Map(userProgress.map((p) => [p.lectureId.toString(), p]));
+    const totalLectures = sortedCourse.sections.reduce((sum, s) => sum + s.lectures.length, 0);
+    const completedLectures = userProgress.filter((p) => p.isCompleted).length;
+    const courseProgress = totalLectures ? (completedLectures / totalLectures) * 100 : 0;
 
-        if (!course) {
-            return res.status(404).json({ message: "Course not found." });
-        }
+    sortedCourse.sections.forEach((section) => {
+      section.lectures.forEach((lecture) => {
+        const progress = progressMap.get(lecture._id.toString());
+        lecture.isCompleted = progress ? progress.isCompleted : false;
+        lecture.lastWatchedPosition = progress ? progress.lastWatchedPosition : 0;
+      });
+    });
 
-        const userProgress = await UserLectureProgressModel.find({ userId, courseId });
-        const progressMap = new Map();
-        userProgress.forEach(p => progressMap.set(p.lectureId.toString(), p));
-
-        const courseWithProgress = course.toObject();
-        courseWithProgress.sections.forEach(section => {
-            section.lectures.forEach(lecture => {
-                const progress = progressMap.get(lecture._id.toString());
-                lecture.isCompleted = progress ? progress.isCompleted : false;
-                lecture.lastWatchedPosition = progress ? progress.lastWatchedPosition : 0;
-            });
-        });
-
-        res.status(200).json({
-            message: "Enrolled course details retrieved successfully",
-            course: courseWithProgress,
-            purchaseDetails: purchase
-        });
-
-    } catch (error) {
-        console.error("Error fetching specific purchased course:", error);
-        res.status(500).json({
-            message: "An error occurred while fetching enrolled course details",
-            error: error.message
-        });
-    }
+    res.status(200).json({
+      message: "Enrolled course details retrieved successfully",
+      course: {
+        _id: sortedCourse._id,
+        title: sortedCourse.title,
+        description: sortedCourse.description,
+        category: sortedCourse.category,
+        price: sortedCourse.price,
+        creatorId: sortedCourse.creatorId,
+        sections: sortedCourse.sections,
+        learningObjectives: sortedCourse.learningObjectives || [],
+        requirements: sortedCourse.requirements || [],
+        targetAudience: sortedCourse.targetAudience || [],
+        duration: sortedCourse.duration || sortedCourse.sections.reduce((sum, s) => sum + s.lectures.reduce((lSum, l) => lSum + (l.duration || 0), 0), 0) / 3600,
+        level: sortedCourse.level || "All Levels",
+        totalLectures,
+        lastUpdated: sortedCourse.lastUpdated || new Date().toISOString().slice(0, 7),
+        imageUrl: sortedCourse.imageUrl || "https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image",
+        videoPreviewUrl: sortedCourse.videoPreviewUrl || "",
+        averageRating: sortedCourse.averageRating || 0,
+        numberOfReviews: sortedCourse.numberOfReviews || 0,
+      },
+      purchaseDetails: {
+        purchasedPrice: purchase.purchasedPrice,
+        progress: parseFloat(courseProgress.toFixed(2)),
+        enrolledAt: purchase.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching specific purchased course:", error);
+    res.status(500).json({
+      message: "An error occurred while fetching enrolled course details",
+      error: error.message,
+    });
+  }
 });
 
 // Route to mark a lecture as complete or update progress
