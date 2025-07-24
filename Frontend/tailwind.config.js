@@ -16,7 +16,7 @@ export default {
         accent: theme.colors.accent,
       },
       fontFamily: { 
-        sans: ['Poppins', ...defaultTheme.fontFamily.sans],
+        sans: ['Montserrat', ...defaultTheme.fontFamily.sans],
       },
       spacing: {
         sm: theme.spacing.sm,

@@ -1,61 +1,58 @@
-import { Children, useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { useAuth } from './context/AuthContext'
-import HomePage from './pages/HomePage'
-import { PUBLIC_ROUTES, AUTH_ROUTES, PROTECTED_ROUTES } from './routes'
-import CourseListingPage from './pages/CourseListingPage'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import ForgotPassword from './pages/ForgotPassword'
-import CourseLearning from './pages/CourseLearning'
-import UserDashboard from './pages/UserDashboard'
-import UserProfile from './pages/UserProfile'
-import CheckoutPage from './pages/CheckoutPage'
-import InstructorDashboard from './pages/InstructorDashboard'
-import NotFound from './pages/NotFound'
+import { Children, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import HomePage from './pages/HomePage';
+import { PUBLIC_ROUTES, AUTH_ROUTES, PROTECTED_ROUTES } from './routes';
+import CourseListingPage from './pages/CourseListingPage';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import CourseLearning from './pages/CourseLearning';
+import UserDashboard from './pages/UserDashboard';
+import UserProfile from './pages/UserProfile';
+import CheckoutPage from './pages/CheckoutPage';
+import InstructorDashboard from './pages/InstructorDashboard';
+import NotFound from './pages/NotFound';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import CourseDetailsPage from './pages/CourseDetailsPage';
+import SearchBar from './components/user/SearchBar';
+import InstructorCoursePage from './pages/InstructorCoursePage';
 
-import Navbar from './components/layout/Navbar'
-import Footer from './components/layout/Footer'
-import CourseDetailsPage from './pages/CourseDetailsPage'
-import SearchBar from './components/user/SearchBar'
-import InstructorCoursePage from './pages/InstructorCoursePage'
+const PrivateRoutes = ({ children, allowedRoles = [] }) => {
+  const { isAuthenticated, user, loading } = useAuth();
 
-const PrivateRoutes = ({children, allowedRoles = []}) => {
-  const {isAuthenticated, user, loading} = useAuth()
-
-
-  if(loading){
+  if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen text-xl font-inter text-gray-700">
-          Loading authentication...
+      <div className="flex justify-center items-center h-screen text-xl font-sans text-text-secondary">
+        Loading authentication...
       </div>
-    )
+    );
   }
 
   if (!isAuthenticated) {
-        return <Navigate to={AUTH_ROUTES.login} replace />;
+    return <Navigate to={AUTH_ROUTES.login} replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/" replace />;
   }
 
-  return children
-}
-
+  return children;
+};
 
 function App() {
- return (
-     <div className="min-h-screen flex flex-col font-inter">
-      <Navbar /> 
-      <main className="flex-grow"> 
+  return (
+    <div className="min-h-screen flex flex-col font-sans">
+      <Navbar />
+      <main className="flex-grow">
         <Routes>
           {/* Public Routes */}
           <Route path={PUBLIC_ROUTES.home} element={<HomePage />} />
           <Route path={PUBLIC_ROUTES.courseListing} element={<CourseListingPage />} />
-          <Route path={PUBLIC_ROUTES.courseDetail} element={<CourseDetailsPage />} /> 
+          <Route path="/course/:id" element={<CourseDetailsPage />} /> {/* Fixed: Use string path */}
           <Route path={PUBLIC_ROUTES.searchBar} element={<SearchBar />} />
           <Route path={PUBLIC_ROUTES.about} element={<About />} />
           <Route path={PUBLIC_ROUTES.contact} element={<Contact />} />
@@ -66,22 +63,22 @@ function App() {
           <Route path={AUTH_ROUTES.ForgotPassword} element={<ForgotPassword />} />
 
           {/* Protected Routes - Wrapped with PrivateRoutes */}
-           <Route
-              path="/instructor/course/new"
-              element={
-                <PrivateRoutes allowedRoles={['instructor']}> {/* Only instructors can create */}
-                  <InstructorCoursePage />
-                </PrivateRoutes>
-              }
-            />
-            <Route
-              path="/instructor/course/edit/:id"
-              element={
-                <PrivateRoutes allowedRoles={['instructor']}> {/* Only instructors can edit */}
-                  <InstructorCoursePage />
-                </PrivateRoutes>
-              }
-            />
+          <Route
+            path="/instructor/course/new"
+            element={
+              <PrivateRoutes allowedRoles={['instructor']}>
+                <InstructorCoursePage />
+              </PrivateRoutes>
+            }
+          />
+          <Route
+            path="/instructor/course/edit/:id"
+            element={
+              <PrivateRoutes allowedRoles={['instructor']}>
+                <InstructorCoursePage />
+              </PrivateRoutes>
+            }
+          />
           <Route
             path={PROTECTED_ROUTES.dashboard}
             element={
@@ -90,16 +87,14 @@ function App() {
               </PrivateRoutes>
             }
           />
-          {/* Course Learning Page */}
           <Route
             path={PROTECTED_ROUTES.courseLearning}
             element={
-              <PrivateRoutes allowedRoles={['learner', 'instructor', 'admin']}> {/* Instructors can also view their own courses */}
+              <PrivateRoutes allowedRoles={['learner', 'instructor', 'admin']}>
                 <CourseLearning />
               </PrivateRoutes>
             }
           />
-          {/* User Profile Page */}
           <Route
             path={PROTECTED_ROUTES.profile}
             element={
@@ -108,16 +103,14 @@ function App() {
               </PrivateRoutes>
             }
           />
-          {/* Checkout Page */}
           <Route
             path={PROTECTED_ROUTES.checkout}
             element={
-              <PrivateRoutes allowedRoles={['learner']}> 
+              <PrivateRoutes allowedRoles={['learner']}>
                 <CheckoutPage />
               </PrivateRoutes>
             }
           />
-          {/* Instructor Dashboard */}
           <Route
             path={PROTECTED_ROUTES.instructor}
             element={
@@ -127,13 +120,12 @@ function App() {
             }
           />
 
-          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      <Footer /> 
+      <Footer />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -1,39 +1,31 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { twMerge } from 'tailwind-merge';
+import { motion } from 'framer-motion';
 
-function Category({ category, onClick, isSelected, className }) {
+function CategoryComponent({ category, onClick, isSelected }) {
   return (
-    <button
-      onClick={() => onClick && onClick(category._id)}
-      className={twMerge(
-        `flex flex-col items-center p-md rounded-lg shadow-sm transition-all duration-200
-        ${isSelected ? 'bg-primary-main text-white' : 'bg-background-card text-text-primary hover:bg-gray-100'}
-        ${onClick ? 'cursor-pointer' : ''}`,
-        className
-      )}
+    <motion.button
+      onClick={onClick}
+      className={`px-sm py-1 rounded-full text-sm font-sans font-medium transition-colors duration-200 ${
+        isSelected
+          ? 'bg-primary-main text-background-card'
+          : 'bg-secondary-light text-text-primary hover:bg-primary-light hover:text-background-card'
+      }`}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
-      <img
-        src={category.imageUrl || 'https://placehold.co/60x60/F9F3EF/1B3C53?text=Cat'}
-        alt={category.name}
-        className="w-12 h-12 object-cover rounded-full mb-sm"
-      />
-      <span className={`text-sm font-semibold text-center ${isSelected ? 'text-white' : 'text-text-primary'}`}>
-        {category.name}
-      </span>
-    </button>
+      {category.name}
+    </motion.button>
   );
 }
 
-Category.propTypes = {
+CategoryComponent.propTypes = {
   category: PropTypes.shape({
     _id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
-    imageUrl: PropTypes.string,
   }).isRequired,
-  onClick: PropTypes.func, 
-  isSelected: PropTypes.bool,
-  className: PropTypes.string,
+  onClick: PropTypes.func.isRequired,
+  isSelected: PropTypes.bool.isRequired,
 };
 
-export default Category;
+export default CategoryComponent;

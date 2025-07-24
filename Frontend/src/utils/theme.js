@@ -25,7 +25,7 @@ const theme = {
     },
   },
   fonts: {
-    primary: ["Poppins", "sans-serif"],
+    primary: ["Montserrat", "sans-serif"],
   },
   spacing: {
     sm: "0.5rem",

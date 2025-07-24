@@ -1,7 +1,7 @@
 export const PUBLIC_ROUTES = {
     home: "/",
     courseListing: "/course",
-    courseDetail: "/course/:id",
+    courseDetail: (id) =>  `/course/${id}`,
     searchBar: "/search",
     about: "/about",
     contact: "/contact"
