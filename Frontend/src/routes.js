@@ -14,7 +14,7 @@ export const AUTH_ROUTES  = {
 }
 
 export const PROTECTED_ROUTES = {
-    courseLearning: "/course/:id/learning",
+    courseLearning: (id) =>  `/course/${id}/learning`,
     dashboard: "/dashboard",
     profile: "/profile",
     checkout: "/checkout",
