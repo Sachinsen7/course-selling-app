@@ -10,7 +10,7 @@ function Button({ text, onClick, className, disabled, variant }) {
 
   return (
     <motion.button
-      className={`${baseClasses} ${variantClasses} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+      className={`px-spacing-md py-spacing-sm rounded font-sans font-semibold bg-primary-main text-background-card hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed px-4 py-1 ${className}`}
       onClick={onClick}
       disabled={disabled}
       whileHover={{ scale: disabled ? 1 : 1.05 }}

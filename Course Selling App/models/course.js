@@ -1,41 +1,67 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const courseSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  category: String,
-  price: Number,
-  creatorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+const CourseSchema = new Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  category: {
+    type: String,
+    trim: true,
+  },
+  price: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+  creatorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   sections: [
     {
-      title: String,
-      order: Number,
-      lectures: [
-        {
-          title: String,
-          type: String,
-          contentUrl: String,
-          textContent: String,
-          duration: Number, // In seconds
-          order: Number,
-          isPublished: Boolean,
-          quizId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz" },
-          assignmentSubmissionId: { type: mongoose.Schema.Types.ObjectId, ref: "AssignmentSubmission" },
-        },
-      ],
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Section',
     },
   ],
-  status: { type: String, enum: ["draft", "published"], default: "draft" },
+  status: {
+    type: String,
+    enum: ['draft', 'published'],
+    default: 'draft',
+  },
   learningObjectives: [String],
   requirements: [String],
   targetAudience: [String],
-  duration: Number, // Total hours
-  level: { type: String, enum: ["Beginner", "Intermediate", "Advanced", "All Levels"], default: "All Levels" },
-  lastUpdated: String, // e.g., "2025-07"
+  duration: {
+    type: Number,
+    min: 0,
+  },
+  level: {
+    type: String,
+    enum: ['Beginner', 'Intermediate', 'Advanced', 'All Levels'],
+    default: 'All Levels',
+  },
+  lastUpdated: String,
   imageUrl: String,
   videoPreviewUrl: String,
-  averageRating: { type: Number, default: 0 },
-  numberOfReviews: { type: Number, default: 0 },
+  averageRating: {
+    type: Number,
+    default: 0,
+  },
+  numberOfReviews: {
+    type: Number,
+    default: 0,
+  },
+}, {
+  timestamps: true,
 });
 
-module.exports = mongoose.model("Course", courseSchema);
+module.exports = mongoose.model('Course', CourseSchema);

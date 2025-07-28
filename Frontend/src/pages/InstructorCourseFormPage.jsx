@@ -1,4 +1,3 @@
-// src/pages/InstructorCourseFormPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +6,7 @@ import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
 import { PROTECTED_ROUTES } from '../routes';
 
-function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
+function InstructorCourseFormPage() { 
   const { id: courseId } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading, showModal } = useAuth();
@@ -16,7 +15,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
     title: '',
     description: '',
     imageUrl: '',
-    price: '', // Initialize as empty string for proper number input behavior
+    price: '',
     category: '',
     status: 'draft',
   });
@@ -55,7 +54,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
               title: courseToEdit.title,
               description: courseToEdit.description,
               imageUrl: courseToEdit.imageUrl,
-              price: courseToEdit.price.toString(), // Convert number to string for input value
+              price: courseToEdit.price.toString(), 
               category: courseToEdit.category?._id || '',
               status: courseToEdit.status,
             });
@@ -91,9 +90,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // For price, allow empty string or valid numbers/decimals
     if (name === 'price') {
-      // Regex to allow only numbers and a single decimal point
       if (/^\d*\.?\d*$/.test(value)) {
         setFormData((prev) => ({ ...prev, [name]: value }));
       }
@@ -107,12 +104,10 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
     setSubmitting(true);
     setError(null);
 
-    // Prepare data for submission, converting price to number here
-    const dataToSubmit = { ...formData };
-    // Convert price to number. If it's an empty string, it becomes 0.
-    dataToSubmit.price = Number(formData.price) || 0; // Use 0 if conversion results in NaN or is empty
 
-    // Frontend validation to match backend Zod schema requirements
+    const dataToSubmit = { ...formData };
+    dataToSubmit.price = Number(formData.price) || 0; 
+
     if (!dataToSubmit.title || dataToSubmit.title.length < 5) {
         setError("Title must be at least 5 characters long.");
         setSubmitting(false);
@@ -128,12 +123,12 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
         setSubmitting(false);
         return;
     }
-    if (dataToSubmit.price < 0) { // Check for negative price after conversion
+    if (dataToSubmit.price < 0) { 
         setError("Price must be a non-negative number.");
         setSubmitting(false);
         return;
     }
-    // Ensure imageUrl is not empty if it's not provided by user
+
     if (!dataToSubmit.imageUrl) {
         dataToSubmit.imageUrl = 'https://placehold.co/600x400/cccccc/333333?text=Course+Image';
     }
@@ -189,7 +184,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
         {error && <p className="text-accent-error text-center mb-md">{error}</p>}
 
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-md">
-          {/* Title */}
+
           <div>
             <label htmlFor="title" className="block text-text-primary text-sm font-semibold mb-sm">Title</label>
             <input
@@ -205,7 +200,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
             />
           </div>
 
-          {/* Description */}
+
           <div>
             <label htmlFor="description" className="block text-text-primary text-sm font-semibold mb-sm">Description</label>
             <textarea
@@ -221,7 +216,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
             />
           </div>
 
-          {/* Image URL */}
+
           <div>
             <label htmlFor="imageUrl" className="block text-text-primary text-sm font-semibold mb-sm">Image URL (Optional)</label>
             <input
@@ -236,7 +231,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
             />
           </div>
 
-          {/* Price */}
+
           <div>
             <label htmlFor="price" className="block text-text-primary text-sm font-semibold mb-sm">Price (₹)</label>
             <input
@@ -253,7 +248,7 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
             />
           </div>
 
-          {/* Category */}
+
           <div>
             <label htmlFor="category" className="block text-text-primary text-sm font-semibold mb-sm">Category</label>
             <select
@@ -275,7 +270,6 @@ function InstructorCourseFormPage() { // Renamed from InstructorCoursePage
             )}
           </div>
 
-          {/* Status */}
           <div>
             <label htmlFor="status" className="block text-text-primary text-sm font-semibold mb-sm">Status</label>
             <select

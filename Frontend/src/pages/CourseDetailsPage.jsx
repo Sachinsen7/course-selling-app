@@ -124,7 +124,7 @@ function CourseDetailsPage() {
         type: "success",
       });
       setIsEnrolled(true);
-      navigate(`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`, { replace: true });
+      navigate(`${PROTECTED_ROUTES.courseLearning(courseId)}`, { replace: true });
     } catch (err) {
       showModal({
         isOpen: true,
@@ -216,8 +216,8 @@ function CourseDetailsPage() {
                 Bestseller
               </span>
             )}
-            <h1 className="text-3xl md:text-4xl font-bold text-text-primary mb-sm">{course.title}</h1>
-            <p className="text-md text-text-secondary mb-md">{course.description}</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-background-main mb-sm">{course.title}</h1>
+            <p className="text-md text-background-card mb-md">{course.description}</p>
             <div className="flex items-center space-x-md mb-md">
               <span className="text-xl font-semibold text-accent-warning">
                 {course.averageRating || 'N/A'} ★
@@ -225,34 +225,34 @@ function CourseDetailsPage() {
                   ({course.numberOfReviews || 0} reviews)
                 </span>
               </span>
-              <span className="text-sm text-text-secondary">
+              <span className="text-sm text-background-card">
                 {course.totalLectures || 0} lectures • {course.duration || 0}h • {course.level}
               </span>
-              <span className="text-sm text-text-secondary">Updated {course.lastUpdated}</span>
+              <span className="text-sm text-background-card">Updated {course.lastUpdated}</span>
             </div>
-            <p className="text-sm text-text-secondary mb-md">
+            <p className="text-sm text-background-main mb-md">
               Created by{' '}
-              <span className="text-primary-light">
+              <span className="text-background-main font-bold">
                 {course.creatorId?.firstName} {course.creatorId?.lastName}
               </span>
             </p>
             {course.category && (
               <span className="inline-block bg-background-card text-primary-main text-sm font-semibold px-md py-xs rounded mb-md">
-                {course.category}
+                {/* {course.category} */}
               </span>
             )}
             <div className="flex items-center space-x-md">
-              <span className="text-2xl font-bold text-text-primary">
+              <span className="text-2xl font-bold text-background-main">
                 {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
               </span>
               {!isEnrolled ? (
                 <Button
                   text={course.price === 0 ? 'Enroll Now' : 'Buy Now'}
                   onClick={handleEnroll}
-                  className="px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
+                  className="px-lg py-sm bg-background-main text-primary-main hover:shadow-md transition-all duration-200"
                 />
               ) : (
-                <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
+                <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
                   <Button
                     text="Go to Course"
                     className="px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
@@ -277,10 +277,10 @@ function CourseDetailsPage() {
               className="px-md py-sm bg-secondary-main text-background-card hover:bg-secondary-light transition-all duration-200"
             />
           ) : (
-            <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
+            <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
               <Button
                 text="Go to Course"
-                className="px-md py-sm bg-secondary-main text-background-card hover:bg-secondary-light transition-all duration-200"
+                className="px-md py-sm bg-primary-dark text-background-card hover:bg-secondary-light transition-all duration-200"
               />
             </Link>
           )}
@@ -584,10 +584,10 @@ function CourseDetailsPage() {
                 <Button
                   text={course.price === 0 ? 'Enroll Now' : 'Buy Now'}
                   onClick={handleEnroll}
-                  className="w-full px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
+                  className="w-full px-lg py-sm bg-primary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
                 />
               ) : (
-                <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
+                <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
                   <Button
                     text="Go to Course"
                     className="w-full px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"

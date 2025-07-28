@@ -19,7 +19,9 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import CourseDetailsPage from './pages/CourseDetailsPage';
 import SearchBar from './components/user/SearchBar';
-import InstructorCoursePage from './pages/InstructorCoursePage';
+import InstructorCourseFormPage from './pages/InstructorCourseFormPage';
+import InstructorCourseContentPage from './pages/InstructorCourseContentPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 const PrivateRoutes = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, user, loading } = useAuth();
@@ -62,23 +64,7 @@ function App() {
           <Route path={AUTH_ROUTES.signup} element={<Signup />} />
           <Route path={AUTH_ROUTES.ForgotPassword} element={<ForgotPassword />} />
 
-          {/* Protected Routes - Wrapped with PrivateRoutes */}
-          <Route
-            path="/instructor/course/new"
-            element={
-              <PrivateRoutes allowedRoles={['instructor']}>
-                <InstructorCoursePage />
-              </PrivateRoutes>
-            }
-          />
-          <Route
-            path="/instructor/course/edit/:id"
-            element={
-              <PrivateRoutes allowedRoles={['instructor']}>
-                <InstructorCoursePage />
-              </PrivateRoutes>
-            }
-          />
+          {/* Protected Routes */}
           <Route
             path={PROTECTED_ROUTES.dashboard}
             element={
@@ -88,7 +74,7 @@ function App() {
             }
           />
           <Route
-            path={PROTECTED_ROUTES.courseLearning}
+            path="/course/:id/learning"
             element={
               <PrivateRoutes allowedRoles={['learner', 'instructor', 'admin']}>
                 <CourseLearning />
@@ -111,11 +97,48 @@ function App() {
               </PrivateRoutes>
             }
           />
+            {/* Protected Routes - Instructor specific */}
+            <Route
+              path={PROTECTED_ROUTES.instructor}
+              element={
+                <PrivateRoutes allowedRoles={['instructor', 'admin']}>
+                  <InstructorDashboard />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/instructor/course/new"
+              element={
+                <PrivateRoutes allowedRoles={['instructor']}>
+                  <InstructorCourseFormPage />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/instructor/course/edit/:id"
+              element={
+                <PrivateRoutes allowedRoles={['instructor']}>
+                  <InstructorCourseFormPage />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/instructor/course/:id/content" 
+              element={
+                <PrivateRoutes allowedRoles={['instructor']}>
+                  <InstructorCourseContentPage />
+                </PrivateRoutes>
+              }
+            />
+
+          
+
+          {/* Admin Specific Protected Routes */}
           <Route
-            path={PROTECTED_ROUTES.instructor}
+            path="/admin/dashboard"
             element={
-              <PrivateRoutes allowedRoles={['instructor', 'admin']}>
-                <InstructorDashboard />
+              <PrivateRoutes allowedRoles={['admin']}>
+                <AdminDashboardPage />
               </PrivateRoutes>
             }
           />

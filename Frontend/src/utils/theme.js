@@ -1,27 +1,27 @@
 const theme = {
   colors: {
     primary: {
-      main: "#1B3C53", // Navy Blue for buttons, accents
-      light: "#456882", // Mid Blue for hover states
-      dark: "#132D40", // Darker Navy for active states
+      main: "#1B3C53", // Deep Navy
+      light: "#456882",
+      dark: "#132D40",
     },
     secondary: {
-      main: "#FFFFFF", // Soft Beige for headers, navbars 
-      light: "#E0D5CC", // Lighter Beige
-      dark: "#B8A79B", // Darker Beige
+      main: "#FFFFFF", // Crisp White
+      light: "#F5F7FA",
+      dark: "#E5E7EB",
     },
     background: {
-      main: "#FFFFFF", // White for page backgrounds
-      card: "#F9F3EF", // Light Cream for cards, forms
+      main: "#FFFFFF",
+      card: "#F9FAFB",
     },
     text: {
-      primary: "#1B3C53", // Navy Blue for main text
-      secondary: "#6B7280", // Medium Gray for secondary text
+      primary: "#1B3C53",
+      secondary: "#6B7280",
     },
     accent: {
-      success: "#059669", // Green for success
-      error: "#DC2626", // Red for errors
-      warning: "#D97706", // Yellow for warnings
+      success: "#4A8292", // Coastal Teal
+      error: "#DC2626",
+      warning: "#D97706",
     },
   },
   fonts: {

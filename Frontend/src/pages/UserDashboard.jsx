@@ -89,10 +89,10 @@ function UserDashboard() {
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                  <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', course._id)}`}>
+                  <Link to={PROTECTED_ROUTES.courseLearning(course._id)}>
                     <Button text="Continue Learning" className="w-full sm:w-auto" />
                   </Link>
-                  <Link to={PUBLIC_ROUTES.courseDetail.replace(':id', course._id)}>
+                  <Link to={PUBLIC_ROUTES.courseDetail(course._id)}>
                     <Button text="View Details" variant="outline" className="w-full sm:w-auto" />
                   </Link>
                 </div>
