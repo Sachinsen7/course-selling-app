@@ -7,21 +7,24 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 10000,
 });
 
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+});
+
+const parseApiResponse = (response) => {
+  if (!response.data || !response.data.message) {
+    throw new Error('Invalid API response format.');
+  }
+  return response.data;
+};
 
 
 const handleApiError = (error, defaultMessage = "An unexpected error occurred.") => {
@@ -36,7 +39,7 @@ const handleApiError = (error, defaultMessage = "An unexpected error occurred.")
 
 // --- AUTHENTICATION API CALLS ---
 
-// Function to register a new user
+
 export const registerUser = async (userData) => {
   try {
     const response = await api.post("/auth/signup", userData);
@@ -46,7 +49,7 @@ export const registerUser = async (userData) => {
   }
 };
 
-// Function to log in a user
+
 export const loginUser = async (userData) => {
   try {
     const response = await api.post("/auth/signin", userData);
@@ -86,19 +89,18 @@ export const changePassword = async (currentPassword, newPassword) => {
   }
 };
 
-// --- COURSE DISCOVERY & DETAILS API CALLS ---
+// --- COURSE  API CALLS ---
 
-// Function to get courses 
 export const getCourses = async (filters = {}) => {
   try {
     const response = await api.get("/search/courses", { params: filters });
-    return response.data; // Expects { message, courses, currentPage, totalPages, totalResults }
+    return response.data;
   } catch (error) {
     throw handleApiError(error, "Failed to fetch courses.");
   }
 };
 
-// Function to get details of a specific course (public view)
+
 export const getCourseById = async (id) => {
   try {
     const response = await api.get(`/search/courses/${id}`);
@@ -108,7 +110,7 @@ export const getCourseById = async (id) => {
   }
 };
 
-// --- ENROLLMENT & LEARNING API CALLS ---
+
 
 
 export const enrollInCourse = async (courseId) => {
@@ -120,27 +122,25 @@ export const enrollInCourse = async (courseId) => {
   }
 };
 
-// Function to get all courses purchased/enrolled by the authenticated user
 export const getPurchasedCourses = async () => {
   try {
     const response = await api.get("/enrollment/purchased-courses");
-    return response.data; // Expects { message, courses }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to fetch purchased courses.");
   }
 };
 
-// Function to get details of a specific enrolled course, including curriculum and user progress
 export const getEnrolledCourseDetails = async (courseId) => {
   try {
     const response = await api.get(`/enrollment/purchased-courses/${courseId}`);
-    return response.data; // Expects { message, course, purchaseDetails }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to fetch enrolled course details.");
   }
 };
 
-// Function to update a learner's progress on a lecture
+
 export const updateLectureProgress = async (lectureId, isCompleted, lastWatchedPosition) => {
   try {
     const response = await api.post("/enrollment/lecture-progress", { lectureId, isCompleted, lastWatchedPosition });
@@ -150,61 +150,59 @@ export const updateLectureProgress = async (lectureId, isCompleted, lastWatchedP
   }
 };
 
-// Function to get a learner's overall progress for a course
+
 export const getCourseProgress = async (courseId) => {
   try {
     const response = await api.get(`/enrollment/course-progress/${courseId}`);
-    return response.data; // Expects { message, courseProgress, completedLectures, totalLectures }
+    return response.data;
   } catch (error) {
     throw handleApiError(error, "Failed to fetch course progress.");
   }
 };
 
-// Function for learner to get a quiz (without correct answers)
 export const getQuizForLearner = async (quizId) => {
   try {
     const response = await api.get(`/enrollment/quiz/${quizId}`);
-    return response.data; // Expects { message, quiz }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to fetch quiz.");
   }
 };
 
-// Function for learner to submit quiz answers
 export const submitQuizAnswers = async (quizId, answers) => {
   try {
     const response = await api.post(`/enrollment/quiz/${quizId}/submit`, { answers });
-    return response.data; // Expects { message, score, passed, results, attemptNumber }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to submit quiz.");
   }
 };
 
-// Function for learner to view their past quiz attempts
+
 export const getQuizAttempts = async (quizId) => {
   try {
     const response = await api.get(`/enrollment/quiz/${quizId}/attempts`);
-    return response.data; // Expects { message, attempts }
-  } catch (error) {
+    return response.data;  
+  } catch {
     throw handleApiError(error, "Failed to fetch quiz attempts.");
   }
 };
 
-// Function for learner to submit an assignment
+
 export const submitAssignment = async (lectureId, submissionData) => {
   try {
     const response = await api.post(`/enrollment/assignment/${lectureId}/submit`, submissionData);
-    return response.data; // Expects { message, submission }
+    return response.data;
   } catch (error) {
     throw handleApiError(error, "Failed to submit assignment.");
   }
 };
 
-// Function for learner to view their own assignment submission
+
 export const getAssignmentSubmission = async (lectureId) => {
   try {
     const response = await api.get(`/enrollment/assignment/${lectureId}/my-submission`);
-    return response.data; // Expects { message, submission }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to fetch assignment submission.");
   }
@@ -248,7 +246,7 @@ export const processPayment = async (courseId, paymentDetails) => {
 export const createCourse = async (courseData) => {
   try {
     const response = await api.post("/instructor/course", courseData);
-    return response.data; // Expects { message, courseId }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to create course.");
   }
@@ -258,7 +256,7 @@ export const createCourse = async (courseData) => {
 export const getInstructorCourses = async () => {
   try {
     const response = await api.get("/instructor/my-courses");
-    return response.data; // Expects { message, courses }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to fetch instructor's courses.");
   }
@@ -268,7 +266,7 @@ export const getInstructorCourses = async () => {
 export const updateInstructorCourse = async (courseId, updateData) => {
   try {
     const response = await api.put("/instructor/course", { courseId, ...updateData });
-    return response.data; // Expects { message, course }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to update course.");
   }
@@ -278,39 +276,136 @@ export const updateInstructorCourse = async (courseId, updateData) => {
 export const deleteInstructorCourse = async (courseId) => {
   try {
     const response = await api.delete(`/instructor/course/${courseId}`);
-    return response.data; // Expects { message, courseId }
+    return response.data;
   } catch (error) {
     throw handleApiError(error, "Failed to delete course.");
   }
 };
 
-// --- ADMIN API CALLS ---
+// Section Management
+export const createSection = async (sectionData) => {
+  try {
+    const payload = {
+      courseId: String(sectionData.courseId),
+      title: sectionData.title,
+      order: Number(sectionData.order) || 0,
+    };
+    console.log('Creating section with payload:', JSON.stringify(payload, null, 2));
+    const response = await api.post('/instructor/section', payload);
+    console.log('Create section response:', JSON.stringify(response.data, null, 2));
+    return response.data;
+  } catch (error) {
+    console.error('Error creating section:', error.response?.data || error.message);
+    throw handleApiError(error, 'Failed to create section.');
+  }
+};
 
-// Function to get all users (admin only)
+
+export const getSectionsForCourse = async (courseId) => {
+  try {
+    const response = await api.get(`/instructor/sections/${courseId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, 'Failed to fetch sections for course.');
+  }
+};
+
+export const updateSection = async (sectionId, updateData) => {
+  try {
+    const response = await api.put(`/instructor/section/${sectionId}`, updateData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, 'Failed to update section.');
+  }
+};
+
+export const deleteSection = async (sectionId) => {
+  try {
+    const response = await api.delete(`/instructor/section/${sectionId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, 'Failed to delete section.');
+  }
+};
+
+// LECTURE MANAGEMENT
+export const createLecture = async (courseId, sectionId, lectureData) => {
+  try {
+    const payload = {
+      ...lectureData,
+      courseId: String(courseId),
+      sectionId: String(sectionId),
+      order: Number(lectureData.order) || 0,
+      duration: lectureData.type === 'video' ? Number(lectureData.duration) || 0 : undefined,
+    };
+    console.log('Creating lecture with payload:', JSON.stringify(payload, null, 2));
+    const response = await api.post('/instructor/lecture', payload);
+    console.log('Create lecture response:', JSON.stringify(response.data, null, 2));
+    return response.data;
+  } catch (error) {
+    console.error('Error creating lecture:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw handleApiError(error, 'Failed to create lecture.');
+  }
+};
+export const getLectureDetails = async (lectureId) => {
+    try {
+        const response = await api.get(`/instructor/lecture/${lectureId}`);
+        return response.data;
+    } catch (error) {
+        throw handleApiError(error, "Failed to fetch lecture details.");
+    }
+};
+
+export const updateLecture = async (lectureId, updateData) => {
+    try {
+        const response = await api.put(`/instructor/lecture/${lectureId}`, updateData);
+        return response.data;
+    } catch (error) {
+        throw handleApiError(error, "Failed to update lecture.");
+    }
+};
+
+export const deleteLecture = async (lectureId) => {
+    try {
+        const response = await api.delete(`/instructor/lecture/${lectureId}`);
+        return response.data;
+    } catch (error) {
+        throw handleApiError(error, "Failed to delete lecture.");
+    }
+};
+
+
+
+
+
 export const getAllUsers = async () => {
   try {
     const response = await api.get("/admin/users");
-    return response.data; // Expects { message, users }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to fetch all users.");
   }
 };
 
-// Function to update a user's role (admin only)
+
 export const updateUserRole = async (userId, role) => {
   try {
     const response = await api.put("/admin/user/role", { userId, role });
-    return response.data; // Expects { message, user }
+    return response.data;
   } catch (error) {
     throw handleApiError(error, "Failed to update user role.");
   }
 };
 
-// Function to create a new category (admin only)
+
 export const createCategory = async (categoryData) => {
   try {
     const response = await api.post("/admin/category", categoryData);
-    return response.data; // Expects { message, category }
+    return response.data; 
   } catch (error) {
     throw handleApiError(error, "Failed to create category.");
   }
