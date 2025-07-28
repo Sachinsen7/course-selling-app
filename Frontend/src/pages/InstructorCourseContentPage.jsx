@@ -28,12 +28,12 @@ function InstructorCourseContentPage() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Section Form States
+  // Section 
   const [showSectionForm, setShowSectionForm] = useState(false);
   const [currentSection, setCurrentSection] = useState(null);
   const [sectionFormData, setSectionFormData] = useState({ courseId, title: '', order: 0 });
 
-  // Lecture Form States
+  // Lecture
   const [showLectureForm, setShowLectureForm] = useState(false);
   const [currentLecture, setCurrentLecture] = useState(null);
   const [lectureFormData, setLectureFormData] = useState({
@@ -47,7 +47,7 @@ function InstructorCourseContentPage() {
     isPublished: true,
   });
 
-  // Confirmation Modal State
+
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     itemType: '',
@@ -85,7 +85,6 @@ const fetchCourseContent = async () => {
       return;
     }
 
-    // Ensure sections is an array
     const sections = Array.isArray(courseDetails.sections) ? courseDetails.sections : [];
     setCourse({ ...courseDetails, sections });
     setSectionFormData((prev) => ({
@@ -107,7 +106,7 @@ const fetchCourseContent = async () => {
   }
 };
 
-  // --- Section Management Handlers ---
+
 const handleAddSectionClick = () => {
   setCurrentSection(null);
   const sections = Array.isArray(course?.sections) ? course.sections : [];
@@ -144,7 +143,7 @@ const handleAddSectionClick = () => {
   setSubmitting(true);
   setError(null);
 
-  // Validation
+
   if (!sectionFormData.title.trim() || sectionFormData.title.length < 3) {
     setError('Section title must be at least 3 characters long.');
     setSubmitting(false);
@@ -285,7 +284,7 @@ const handleLectureFormSubmit = async (e) => {
   setSubmitting(true);
   setError(null);
 
-  // Validation
+
   if (!lectureFormData.title.trim() || lectureFormData.title.length < 3 || lectureFormData.title.length > 150) {
     setError('Lecture title must be between 3 and 150 characters.');
     setSubmitting(false);
@@ -411,7 +410,7 @@ const handleLectureFormSubmit = async (e) => {
     });
   };
 
-  // --- Render Logic ---
+
   if (authLoading || loading) return <Loader />;
   if (error && !course) return <div className="text-accent-error text-center p-lg text-lg">{error}</div>;
   if (!user || user.role !== 'instructor' || !course) return null;
@@ -422,7 +421,7 @@ const handleLectureFormSubmit = async (e) => {
         <h1 className="text-4xl font-bold text-text-primary text-center mb-lg">Manage Content for "{course.title}"</h1>
         <p className="text-lg text-text-secondary text-center mb-xl">Organize sections and lectures for your course.</p>
 
-        {/* Section Management */}
+
         <div className="mb-xl">
           <h2 className="text-3xl font-bold text-text-primary mb-md border-b pb-sm">Course Sections</h2>
           <div className="flex justify-end mb-md">
@@ -498,7 +497,7 @@ const handleLectureFormSubmit = async (e) => {
           )}
         </div>
 
-        {/* Section Form Modal */}
+
         <Modal
           isOpen={showSectionForm}
           onClose={() => setShowSectionForm(false)}
@@ -548,7 +547,7 @@ const handleLectureFormSubmit = async (e) => {
           </form>
         </Modal>
 
-        {/* Lecture Form Modal */}
+
         <Modal
           isOpen={showLectureForm}
           onClose={() => setShowLectureForm(false)}
@@ -709,7 +708,7 @@ const handleLectureFormSubmit = async (e) => {
           </form>
         </Modal>
 
-        {/* Global Confirmation Modal */}
+
         <Modal
           isOpen={confirmModal.isOpen}
           onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
