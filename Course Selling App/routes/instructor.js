@@ -2,6 +2,7 @@ const { Router } = require("express");
 const { CourseModel, UserModel, SectionModel, LectureModel, QuizModel, QuestionModel, AssignmentSubmissionModel, UserLectureProgressModel, UserQuizAttemptModel} = require("../db/db");
 const authMiddleware = require("../middleware/auth");
 const z = require("zod");
+const mongoose = require("mongoose");
 
 const instructorRouter = Router();
 
@@ -29,20 +30,21 @@ const updateCourseSchema = z.object({
 });
 
 // Zod schema for creating a section
+
 const createSectionSchema = z.object({
-    courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid course ID format"),
-    title: z.string().min(3, "Section title must be at least 3 characters long").max(100, "Section title cannot exceed 100 characters").trim(),
-    order: z.number().int().min(0, "Order must be a non-negative integer")
+  courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid course ID format'),
+  title: z.string().min(3, 'Section title must be at least 3 characters long').max(100, 'Section title cannot exceed 100 characters').trim(),
+  order: z.number().int().min(0, 'Order must be a non-negative integer'),
 });
 
-// Zod schema for updating a section
 const updateSectionSchema = z.object({
-    sectionId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid section ID format"),
-    title: z.string().min(3, "Section title must be at least 3 characters long").max(100, "Section title cannot exceed 100 characters").trim().optional(),
-    order: z.number().int().min(0, "Order must be a non-negative integer").optional()
-}).refine(data => data.title !== undefined || data.order !== undefined, {
-    message: "At least one field (title, order) must be provided for update."
+  sectionId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid section ID format'),
+  title: z.string().min(3, 'Section title must be at least 3 characters long').max(100, 'Section title cannot exceed 100 characters').trim().optional(),
+  order: z.number().int().min(0, 'Order must be a non-negative integer').optional(),
+}).refine((data) => data.title !== undefined || data.order !== undefined, {
+  message: 'At least one field (title, order) must be provided for update.',
 });
+
 
 // Zod schema for creating a lecture
 const createLectureSchema = z.object({
@@ -149,10 +151,12 @@ const gradeAssignmentSchema = z.object({
 });
 
 
-// Helper function to check if instructor owns the course
 const checkCourseOwnership = async (courseId, instructorId) => {
-    const course = await CourseModel.findOne({ _id: courseId, creatorId: instructorId });
-    return course;
+  const course = await CourseModel.findById(courseId);
+  if (!course || course.creatorId.toString() !== instructorId) {
+    return null;
+  }
+  return course;
 };
 
 
@@ -177,7 +181,7 @@ const checkQuestionOwnership = async (questionId, instructorId) => {
 };
 
 
-// Course Routes
+
 
 // Route to create a new course
 instructorRouter.post("/course", authMiddleware, async (req, res) => {
@@ -306,150 +310,163 @@ instructorRouter.delete("/course/:courseId", authMiddleware, async (req, res) =>
 
 // Section Routes 
 
-// Route to create a new section for a course
-instructorRouter.post("/section", authMiddleware, async (req, res) => {
-    if (req.userRole !== 'instructor') {
-        return res.status(403).json({ message: "Access denied. Only instructors can create sections." });
+instructorRouter.post('/section', authMiddleware, async (req, res) => {
+  if (req.userRole !== 'instructor') {
+    return res.status(403).json({ message: 'Access denied. Only instructors can create sections.', error: 'Forbidden' });
+  }
+
+  const validationResult = createSectionSchema.safeParse(req.body);
+  if (!validationResult.success) {
+    return res.status(400).json({
+      message: 'Invalid input data for section creation',
+      error: 'ValidationError',
+      details: validationResult.error.errors,
+    });
+  }
+
+  const { courseId, title, order } = validationResult.data;
+  const instructorId = req.userId;
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+    const course = await checkCourseOwnership(courseId, instructorId);
+    if (!course) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Course not found or you don't have permission to add sections to it.", error: 'NotFound' });
     }
 
-    const validationResult = createSectionSchema.safeParse(req.body);
-    if (!validationResult.success) {
-        return res.status(400).json({ message: "Invalid input data for section creation", errors: validationResult.error.errors });
-    }
+    const newSection = await SectionModel.create([{ courseId, title, order, lectures: [] }], { session });
+    await CourseModel.findByIdAndUpdate(courseId, { $push: { sections: newSection[0]._id } }, { session });
 
-    const { courseId, title, order } = validationResult.data;
-    const instructorId = req.userId;
-
-    try {
-        const course = await checkCourseOwnership(courseId, instructorId);
-        if (!course) {
-            return res.status(404).json({ message: "Course not found or you don't have permission to add sections to it." });
-        }
-
-        const newSection = await SectionModel.create({ courseId, title, order });
-        await CourseModel.findByIdAndUpdate(courseId, { $addToSet: { sections: newSection._id } });
-
-        res.status(201).json({ message: "Section created successfully", section: newSection });
-    } catch (error) {
-        console.error("Error creating section:", error);
-        res.status(500).json({ message: "An error occurred while creating the section", error: error.message });
-    }
+    await session.commitTransaction();
+    session.endSession();
+    res.status(201).json({ message: 'Section created successfully', section: newSection[0] });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error creating section:', error);
+    res.status(500).json({ message: 'An error occurred while creating the section', error: error.message });
+  }
 });
 
-// Route to get all sections for a specific course
-instructorRouter.get("/sections/:courseId", authMiddleware, async (req, res) => {
-    if (req.userRole !== 'instructor') {
-        return res.status(403).json({ message: "Access denied. Only instructors can view sections." });
+instructorRouter.get('/sections/:courseId', authMiddleware, async (req, res) => {
+  if (req.userRole !== 'instructor') {
+    return res.status(403).json({ message: 'Access denied. Only instructors can view sections.', error: 'Forbidden' });
+  }
+
+  const courseId = req.params.courseId;
+  const instructorId = req.userId;
+
+  if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ message: 'Invalid course ID format.', error: 'ValidationError' });
+  }
+
+  try {
+    const course = await checkCourseOwnership(courseId, instructorId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found or you don't have permission to view its sections.", error: 'NotFound' });
     }
 
-    const courseId = req.params.courseId;
-    const instructorId = req.userId;
+    const sections = await SectionModel.find({ courseId })
+      .populate({
+        path: 'lectures',
+        populate: [
+          { path: 'quizId', select: 'title description passPercentage' },
+          { path: 'assignmentSubmissionId', select: 'submissionUrl grade feedback' },
+        ],
+      })
+      .sort({ order: 1 });
 
-    if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
-        return res.status(400).json({ message: "Invalid course ID format." });
-    }
-
-    try {
-        const course = await checkCourseOwnership(courseId, instructorId);
-        if (!course) {
-            return res.status(404).json({ message: "Course not found or you don't have permission to view its sections." });
-        }
-
-        const sections = await SectionModel.find({ courseId: courseId })
-            .populate('lectures')
-            .sort({ order: 1 });
-
-        res.status(200).json({ message: "Sections fetched successfully", sections });
-    } catch (error) {
-        console.error("Error fetching sections:", error);
-        res.status(500).json({ message: "An error occurred while fetching sections", error: error.message });
-    }
+    res.status(200).json({ message: 'Sections fetched successfully', sections });
+  } catch (error) {
+    console.error('Error fetching sections:', error);
+    res.status(500).json({ message: 'An error occurred while fetching sections', error: error.message });
+  }
 });
 
-// Route to update a section
-instructorRouter.put("/section/:sectionId", authMiddleware, async (req, res) => {
-    if (req.userRole !== 'instructor') {
-        return res.status(403).json({ message: "Access denied. Only instructors can update sections." });
+instructorRouter.put('/section/:sectionId', authMiddleware, async (req, res) => {
+  if (req.userRole !== 'instructor') {
+    return res.status(403).json({ message: 'Access denied. Only instructors can update sections.' });
+  }
+
+  const sectionId = req.params.sectionId;
+  const instructorId = req.userId;
+
+  const validationResult = updateSectionSchema.safeParse({ ...req.body, sectionId });
+  if (!validationResult.success) {
+    return res.status(400).json({ message: 'Invalid input data for section update', errors: validationResult.error.errors });
+  }
+
+  const { title, order } = validationResult.data;
+
+  try {
+    const section = await SectionModel.findById(sectionId);
+    if (!section) {
+      return res.status(404).json({ message: 'Section not found.' });
     }
 
-    const sectionId = req.params.sectionId;
-    const instructorId = req.userId;
-
-    const validationResult = updateSectionSchema.safeParse({ ...req.body, sectionId });
-    if (!validationResult.success) {
-        return res.status(400).json({ message: "Invalid input data for section update", errors: validationResult.error.errors });
+    const course = await checkCourseOwnership(section.courseId, instructorId);
+    if (!course) {
+      return res.status(403).json({ message: "You don't have permission to update this section." });
     }
 
-    const updateData = validationResult.data;
+    const updatedSection = await SectionModel.findByIdAndUpdate(
+      sectionId,
+      { $set: { title, order } },
+      { new: true, runValidators: true }
+    );
 
-    try {
-        const section = await SectionModel.findById(sectionId);
-        if (!section) {
-            return res.status(404).json({ message: "Section not found." });
-        }
-
-        const course = await checkCourseOwnership(section.courseId, instructorId);
-        if (!course) {
-            return res.status(403).json({ message: "You don't have permission to update this section." });
-        }
-
-        const updatedSection = await SectionModel.findByIdAndUpdate(
-            sectionId,
-            { $set: updateData },
-            { new: true, runValidators: true }
-        );
-
-        res.status(200).json({ message: "Section updated successfully", section: updatedSection });
-    } catch (error) {
-        console.error("Error updating section:", error);
-        res.status(500).json({ message: "An error occurred while updating the section", error: error.message });
-    }
+    res.status(200).json({ message: 'Section updated successfully', section: updatedSection });
+  } catch (error) {
+    console.error('Error updating section:', error);
+    res.status(500).json({ message: 'An error occurred while updating the section', error: error.message });
+  }
 });
 
-// Route to delete a section
-instructorRouter.delete("/section/:sectionId", authMiddleware, async (req, res) => {
-    if (req.userRole !== 'instructor') {
-        return res.status(403).json({ message: "Access denied. Only instructors can delete sections." });
+instructorRouter.delete('/section/:sectionId', authMiddleware, async (req, res) => {
+  if (req.userRole !== 'instructor') {
+    return res.status(403).json({ message: 'Access denied. Only instructors can delete sections.' });
+  }
+
+  const sectionId = req.params.sectionId;
+  const instructorId = req.userId;
+
+  if (!sectionId.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ message: 'Invalid section ID format.' });
+  }
+
+  try {
+    const section = await SectionModel.findById(sectionId);
+    if (!section) {
+      return res.status(404).json({ message: 'Section not found.' });
     }
 
-    const sectionId = req.params.sectionId;
-    const instructorId = req.userId;
-
-    if (!sectionId.match(/^[0-9a-fA-F]{24}$/)) {
-        return res.status(400).json({ message: "Invalid section ID format." });
+    const course = await checkCourseOwnership(section.courseId, instructorId);
+    if (!course) {
+      return res.status(403).json({ message: "You don't have permission to delete this section." });
     }
 
-    try {
-        const section = await SectionModel.findById(sectionId);
-        if (!section) {
-            return res.status(404).json({ message: "Section not found." });
-        }
+    await CourseModel.findByIdAndUpdate(section.courseId, { $pull: { sections: sectionId } });
 
-        const course = await checkCourseOwnership(section.courseId, instructorId);
-        if (!course) {
-            return res.status(403).json({ message: "You don't have permission to delete this section." });
-        }
+    const lectures = await LectureModel.find({ sectionId });
+    const lectureIds = lectures.map((l) => l._id);
 
-        await CourseModel.findByIdAndUpdate(section.courseId, { $pull: { sections: sectionId } });
-
-        // Delete all lectures, quizzes, questions, and assignment submissions within this section
-        const lectures = await LectureModel.find({ sectionId: sectionId });
-        const lectureIds = lectures.map(l => l._id);
-
-        if (lectureIds.length > 0) {
-            await QuizModel.deleteMany({ lectureId: { $in: lectureIds } });
-            await QuestionModel.deleteMany({ quizId: { $in: lectures.filter(l => l.type === 'quiz').map(l => l.quizId) } });
-            await AssignmentSubmissionModel.deleteMany({ lectureId: { $in: lectureIds } });
-            await UserLectureProgressModel.deleteMany({ lectureId: { $in: lectureIds } });
-        }
-        await LectureModel.deleteMany({ sectionId: sectionId });
-        await SectionModel.findByIdAndDelete(sectionId);
-
-        res.status(200).json({ message: "Section deleted successfully", sectionId });
-    } catch (error) {
-        console.error("Error deleting section:", error);
-        res.status(500).json({ message: "An error occurred while deleting the section", error: error.message });
+    if (lectureIds.length > 0) {
+      await QuizModel.deleteMany({ lectureId: { $in: lectureIds } });
+      await QuestionModel.deleteMany({ quizId: { $in: lectures.filter((l) => l.type === 'quiz').map((l) => l.quizId) } });
+      await AssignmentSubmissionModel.deleteMany({ lectureId: { $in: lectureIds } });
+      await UserLectureProgressModel.deleteMany({ lectureId: { $in: lectureIds } });
     }
+    await LectureModel.deleteMany({ sectionId });
+    await SectionModel.findByIdAndDelete(sectionId);
+
+    res.status(200).json({ message: 'Section deleted successfully', sectionId });
+  } catch (error) {
+    console.error('Error deleting section:', error);
+    res.status(500).json({ message: 'An error occurred while deleting the section', error: error.message });
+  }
 });
 
 
@@ -621,7 +638,7 @@ instructorRouter.delete("/lecture/:lectureId", authMiddleware, async (req, res) 
 });
 
 
-// Quiz Routes (New)
+// Quiz Routes 
 
 // Route to create a quiz for a specific lecture 
 instructorRouter.post("/quiz", authMiddleware, async (req, res) => {
