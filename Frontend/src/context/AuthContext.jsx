@@ -61,34 +61,37 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [decodeToken]);
 
-  const login = useCallback(async (credentials) => {
-    setLoading(true);
-    try {
-      const data = await authServiceLogin(credentials.email, credentials.password);
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-      setUser({ userId: data.userId, role: data.role, firstName: data.firstName, lastName: data.lastName });
-      setModal({
-        isOpen: true,
-        title: "Login Successful!",
-        message: `Welcome back, ${data.firstName || data.email}!`,
-        type: "success",
-        onClose: () => setModal(prev => ({ ...prev, isOpen: false })) // Reset modal state
-      });
-      return data;
-    } catch (error) {
-      setModal({
-        isOpen: true,
-        title: "Login Failed",
-        message: error.message,
-        type: "error",
-        onClose: () => setModal(prev => ({ ...prev, isOpen: false }))
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+ const login = useCallback(async (credentials) => {
+  setLoading(true);
+  try {
+    const data = await authServiceLogin(credentials.email, credentials.password);
+    localStorage.setItem('token', data.token);
+    setToken(data.token);
+    setUser({ userId: data.userId, role: data.role, firstName: data.firstName, lastName: data.lastName });
+    setModal({
+      isOpen: true,
+      title: 'Login Successful!',
+      message: `Welcome back, ${data.firstName || data.email}!`,
+      type: 'success',
+      onClose: () => setModal(prev => ({ ...prev, isOpen: false })),
+    });
+    return data;
+  } catch (error) {
+    const errorMessage = error.response?.data?.details
+      ? error.response.data.details.map(err => err.message).join('; ')
+      : error.message;
+    setModal({
+      isOpen: true,
+      title: 'Login Failed',
+      message: errorMessage || 'Login failed. Please try again.',
+      type: 'error',
+      onClose: () => setModal(prev => ({ ...prev, isOpen: false })),
+    });
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   const signup = useCallback(async (userData) => {
     setLoading(true);
