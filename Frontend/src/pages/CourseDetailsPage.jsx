@@ -124,7 +124,7 @@ function CourseDetailsPage() {
         type: "success",
       });
       setIsEnrolled(true);
-      navigate(`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`, { replace: true });
+      navigate(`${PROTECTED_ROUTES.courseLearning(courseId)}`, { replace: true });
     } catch (err) {
       showModal({
         isOpen: true,
@@ -252,7 +252,7 @@ function CourseDetailsPage() {
                   className="px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
                 />
               ) : (
-                <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
+                <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
                   <Button
                     text="Go to Course"
                     className="px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
@@ -277,7 +277,7 @@ function CourseDetailsPage() {
               className="px-md py-sm bg-secondary-main text-background-card hover:bg-secondary-light transition-all duration-200"
             />
           ) : (
-            <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
+            <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
               <Button
                 text="Go to Course"
                 className="px-md py-sm bg-secondary-main text-background-card hover:bg-secondary-light transition-all duration-200"
@@ -587,7 +587,7 @@ function CourseDetailsPage() {
                   className="w-full px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
                 />
               ) : (
-                <Link to={`${PROTECTED_ROUTES.courseLearning.replace(':id', courseId)}`}>
+                <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
                   <Button
                     text="Go to Course"
                     className="w-full px-lg py-sm bg-secondary-main text-background-card hover:bg-secondary-light hover:shadow-md transition-all duration-200"
