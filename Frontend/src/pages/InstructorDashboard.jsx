@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getInstructorCourses, deleteInstructorCourse, getCourseById } from '../services/api'; 
+import { getInstructorCourses, deleteInstructorCourse } from '../services/api'; 
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
-import Modal from '../components/common/Model'; 
+import Modal from '../components/common/Model';
 import { PUBLIC_ROUTES } from '../routes';
 
 function InstructorDashboard() {
@@ -14,7 +14,6 @@ function InstructorDashboard() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -49,7 +48,6 @@ function InstructorDashboard() {
     }
   };
 
-  // Function to open the confirmation modal
   const openConfirmDeleteModal = (courseId, courseTitle) => {
     setConfirmModal({
       isOpen: true,
@@ -58,9 +56,8 @@ function InstructorDashboard() {
     });
   };
 
-  // Function to handle the actual deletion after confirmation
   const confirmAndDeleteCourse = async () => {
-    setConfirmModal({ ...confirmModal, isOpen: false }); 
+    setConfirmModal({ ...confirmModal, isOpen: false });
     setLoading(true);
     try {
       await deleteInstructorCourse(confirmModal.courseIdToDelete);
@@ -70,7 +67,7 @@ function InstructorDashboard() {
         message: `"${confirmModal.courseTitleToDelete}" has been successfully deleted.`,
         type: "success",
       });
-      fetchInstructorCourses(); 
+      fetchInstructorCourses();
     } catch (err) {
       showModal({
         isOpen: true,
@@ -118,6 +115,9 @@ function InstructorDashboard() {
                   <Link to={`/instructor/course/edit/${course._id}`}>
                     <Button text="Edit" variant="secondary" className="w-full sm:w-auto" />
                   </Link>
+                  <Link to={`/instructor/course/${course._id}/content`}> 
+                    <Button text="Manage Content" className="bg-primary-dark hover:bg-primary-light text-white w-full sm:w-auto" />
+                  </Link>
                   <Button
                     text="Delete"
                     onClick={() => openConfirmDeleteModal(course._id, course.title)}
@@ -130,7 +130,6 @@ function InstructorDashboard() {
         )}
       </div>
 
-      {/* Custom Confirmation Modal */}
       <Modal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
