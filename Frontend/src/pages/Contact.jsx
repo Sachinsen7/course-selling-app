@@ -21,16 +21,17 @@ function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setSubmitting(true);
 
     try {
-      // Simulate API call (replace with POST /api/contact)
       await new Promise((resolve) => setTimeout(resolve, 1500));
       showModal({
         isOpen: true,
         title: 'Message Sent',
         message: 'We’ve received your message and will respond soon.',
         type: 'success',
+        onClose: () => {}, 
       });
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
@@ -39,6 +40,7 @@ function Contact() {
         title: 'Submission Failed',
         message: 'An error occurred. Please try again later.',
         type: 'error',
+        onClose: () => {}, 
       });
     } finally {
       setSubmitting(false);
@@ -65,34 +67,37 @@ function Contact() {
   ];
 
   return (
-    <div className="min-h-screen bg-background-main font-sans">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-[#FFFFFF] font-sans">
       <motion.section
-        className="bg-gradient-to-r from-primary-main to-primary-light text-background-card py-lg"
+        className="bg-gradient-to-r from-[#1B3C53] to-[#456882] text-[#FFFFFF] py-12 md:py-16"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="container mx-auto px-md text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-background-card mb-sm">Contact Us</h1>
-          <p className="text-md text-background-card/80 max-w-xl mx-auto">
+        <div className="container mx-auto px-4 md:px-6 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">Contact Us</h1>
+          <p className="text-base md:text-lg text-[#FFFFFF]/80 max-w-xl mx-auto">
             Need help or have a question? Send us a message, and we’ll respond within 24 hours.
           </p>
         </div>
       </motion.section>
 
-      {/* Contact Form */}
       <motion.section
-        className="container mx-auto px-md py-lg"
+        className="container mx-auto px-4 md:px-6 py-12 md:py-16"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <div className="max-w-lg mx-auto bg-background-card p-md rounded-lg shadow-md border border-secondary-light">
-          <h2 className="text-2xl font-bold text-text-primary mb-md text-center">Send a Message</h2>
-          <form onSubmit={handleSubmit} className="space-y-md">
+        <div className="max-w-lg mx-auto bg-[#F9FAFB] p-6 md:p-8 rounded-xl shadow-md border border-[#E5E7EB]">
+          <h2 className="text-xl md:text-2xl font-bold text-[#1B3C53] mb-6 text-center">
+            Send a Message
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-text-primary text-sm font-semibold mb-xs">
+              <label
+                htmlFor="name"
+                className="block text-[#1B3C53] text-sm font-semibold mb-2"
+              >
                 Name
               </label>
               <motion.input
@@ -101,14 +106,18 @@ function Contact() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full p-sm border border-secondary-light rounded-md focus:outline-none focus:ring-2 focus:ring-primary-main text-text-primary transition-all duration-200"
+                className="w-full p-3 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
                 required
                 disabled={submitting}
                 whileFocus={{ scale: 1.02 }}
+                aria-describedby="name-error"
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-text-primary text-sm font-semibold mb-xs">
+              <label
+                htmlFor="email"
+                className="block text-[#1B3C53] text-sm font-semibold mb-2"
+              >
                 Email
               </label>
               <motion.input
@@ -117,14 +126,18 @@ function Contact() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full p-sm border border-secondary-light rounded-md focus:outline-none focus:ring-2 focus:ring-primary-main text-text-primary transition-all duration-200"
+                className="w-full p-3 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
                 required
                 disabled={submitting}
                 whileFocus={{ scale: 1.02 }}
+                aria-describedby="email-error"
               />
             </div>
             <div>
-              <label htmlFor="subject" className="block text-text-primary text-sm font-semibold mb-xs">
+              <label
+                htmlFor="subject"
+                className="block text-[#1B3C53] text-sm font-semibold mb-2"
+              >
                 Subject
               </label>
               <motion.input
@@ -133,14 +146,18 @@ function Contact() {
                 name="subject"
                 value={formData.subject}
                 onChange={handleChange}
-                className="w-full p-sm border border-secondary-light rounded-md focus:outline-none focus:ring-2 focus:ring-primary-main text-text-primary transition-all duration-200"
+                className="w-full p-3 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
                 required
                 disabled={submitting}
                 whileFocus={{ scale: 1.02 }}
+                aria-describedby="subject-error"
               />
             </div>
             <div>
-              <label htmlFor="message" className="block text-text-primary text-sm font-semibold mb-xs">
+              <label
+                htmlFor="message"
+                className="block text-[#1B3C53] text-sm font-semibold mb-2"
+              >
                 Message
               </label>
               <motion.textarea
@@ -149,59 +166,67 @@ function Contact() {
                 rows="5"
                 value={formData.message}
                 onChange={handleChange}
-                className="w-full p-sm border border-secondary-light rounded-md focus:outline-none focus:ring-2 focus:ring-primary-main text-text-primary transition-all duration-200"
+                className="w-full p-3 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
                 required
                 disabled={submitting}
                 whileFocus={{ scale: 1.02 }}
+                aria-describedby="message-error"
               />
             </div>
             <Button
               text={submitting ? 'Sending...' : 'Send Message'}
               type="submit"
-              className="w-full px-lg py-sm bg-primary-main text-background-card hover:bg-primary-light hover:shadow-md transition-all duration-200"
+              className="w-full px-6 py-3 bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
               disabled={submitting}
+              aria-label="Send message"
             />
           </form>
         </div>
       </motion.section>
 
-      {/* FAQs */}
       <motion.section
-        className="container mx-auto px-md py-lg"
+        className="container mx-auto px-4 md:px-6 py-12 md:py-16"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
-        <h2 className="text-2xl font-bold text-text-primary mb-md text-center">Frequently Asked Questions</h2>
-        <div className="max-w-lg mx-auto space-y-sm">
+        <h2 className="text-xl md:text-2xl font-bold text-[#1B3C53] mb-6 text-center">
+          Frequently Asked Questions
+        </h2>
+        <div className="max-w-lg mx-auto space-y-4">
           {faqs.map((faq, index) => (
             <motion.div
               key={index}
-              className="bg-background-card p-sm rounded-md shadow-sm border border-secondary-light hover:shadow-md transition-shadow duration-200"
+              className="bg-[#F9FAFB] p-4 rounded-md shadow-sm border border-[#E5E7EB] hover:shadow-md transition-shadow duration-200"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
               <button
-                className="flex justify-between items-center w-full text-sm font-semibold text-text-primary px-sm py-xs"
+                className="flex justify-between items-center w-full text-sm font-semibold text-[#1B3C53] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#4A8292]"
                 onClick={() => toggleFaq(index)}
+                aria-expanded={openFaq === index}
+                aria-controls={`faq-answer-${index}`}
               >
                 <span>{faq.question}</span>
                 <motion.span
                   animate={{ rotate: openFaq === index ? 180 : 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  ▼
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
                 </motion.span>
               </button>
               <AnimatePresence>
                 {openFaq === index && (
                   <motion.p
+                    id={`faq-answer-${index}`}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="text-text-secondary text-sm px-sm py-xs"
+                    className="text-[#6B7280] text-sm px-4 py-2"
                   >
                     {faq.answer}
                   </motion.p>
