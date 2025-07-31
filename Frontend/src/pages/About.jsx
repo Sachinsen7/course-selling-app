@@ -7,14 +7,14 @@ import { PUBLIC_ROUTES } from '../routes';
 function About() {
   const teamMembers = [
     {
-      name: 'John Doe',
+      name: 'Sachin Sen',
       role: 'Founder & CEO',
-      bio: 'John leads LearnSphere, focusing on innovative education solutions.',
+      bio: 'Sachin leads LearnSphere, focusing on innovative education solutions.',
     },
     {
-      name: 'Jane Smith',
+      name: 'Kanchan Kahar',
       role: 'Head of Education',
-      bio: 'Jane curates our course offerings to ensure quality and relevance.',
+      bio: 'Kanchan curates our course offerings to ensure quality and relevance.',
     },
   ];
 
