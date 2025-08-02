@@ -9,7 +9,7 @@ dotenv.config();
 
 const { connectDB } = require("./db/db");
 
-// Import routers
+
 const authRouter = require("./routes/auth");
 const enrollmentRouter = require("./routes/enrollments");
 const instructorRouter = require("./routes/instructor");
@@ -21,11 +21,11 @@ const userRouter = require("./routes/user")
 
 const app = express();
 
-// Middleware
+
 app.use(express.json());
 app.use(cors());
 
-// Serve uploaded files statically
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
@@ -33,7 +33,6 @@ app.get("/", (req, res) => {
     res.send("LMS Backend API is running!");
 });
 
-// Mount routers
 app.use("/api/auth", authRouter);
 app.use("/api/enrollment", enrollmentRouter);
 app.use("/api/instructor", instructorRouter);
@@ -49,7 +48,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: "Something went wrong on the server!" });
 });
 
-// Connect to DB 
+
 const PORT = process.env.PORT || 3000;
 
 connectDB(process.env.MONGO_URI)
