@@ -18,5 +18,8 @@ export const PROTECTED_ROUTES = {
     dashboard: "/dashboard",
     profile: "/profile",
     checkout: "/checkout",
-    instructor: "/instructor"
+    instructor: "/instructor",
+    wishlist: "/wishlist",
+    cart: "/cart",
+    helpSupport: "/help-support"
 };

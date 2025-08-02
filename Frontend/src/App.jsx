@@ -13,6 +13,9 @@ import CourseLearning from './pages/CourseLearning';
 import UserDashboard from './pages/UserDashboard';
 import UserProfile from './pages/UserProfile';
 import CheckoutPage from './pages/CheckoutPage';
+import WishlistPage from './pages/WishlistPage';
+import CartPage from './pages/CartPage';
+import HelpSupportPage from './pages/HelpSupportPage';
 import InstructorDashboard from './pages/InstructorDashboard';
 import NotFound from './pages/NotFound';
 import Navbar from './components/layout/Navbar';
@@ -49,7 +52,7 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col font-sans">
       <Navbar />
-      <main className="flex-grow">
+      <main className="flex-grow pt-16">
         <Routes>
           {/* Public Routes */}
           <Route path={PUBLIC_ROUTES.home} element={<HomePage />} />
@@ -94,6 +97,30 @@ function App() {
             element={
               <PrivateRoutes allowedRoles={['learner']}>
                 <CheckoutPage />
+              </PrivateRoutes>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTES.wishlist}
+            element={
+              <PrivateRoutes allowedRoles={['learner', 'instructor', 'admin']}>
+                <WishlistPage />
+              </PrivateRoutes>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTES.cart}
+            element={
+              <PrivateRoutes allowedRoles={['learner', 'instructor', 'admin']}>
+                <CartPage />
+              </PrivateRoutes>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTES.helpSupport}
+            element={
+              <PrivateRoutes allowedRoles={['learner', 'instructor', 'admin']}>
+                <HelpSupportPage />
               </PrivateRoutes>
             }
           />
