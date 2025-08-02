@@ -5,7 +5,7 @@ import Button from '../components/common/Button';
 import { updateUserProfile, changePassword } from '../services/api';
 
 function UserProfile() {
-  const { user, loading: authLoading, showModal, token } = useAuth();
+  const { user, loading: authLoading, showModal, token, updateUser } = useAuth();
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,9 +27,11 @@ function UserProfile() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [submittingPassword, setSubmittingPassword] = useState(false);
+  const [profileFetched, setProfileFetched] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !profileFetched) {
+      // Use the user data that's already been fetched by AuthContext
       setProfileFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -37,12 +39,13 @@ function UserProfile() {
         profilePicture: user.profilePicture || '',
         bio: user.bio || '',
       });
+      setProfileFetched(true);
       setLoading(false);
     } else if (!authLoading && !user) {
       setError('Please log in to view your profile.');
       setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [authLoading, user, profileFetched]);
 
   // Handle file selection
   const handleFileSelect = (e) => {
@@ -135,8 +138,7 @@ function UserProfile() {
       const data = await response.json();
 
       // Update user context with new data
-      const updatedUser = { ...user, ...data.user };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      updateUser(data.user);
 
       showModal({
         isOpen: true,
