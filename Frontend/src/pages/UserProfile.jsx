@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import UserProfileCard from '../components/user/UserProfileCard';
-import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
 import { updateUserProfile, changePassword } from '../services/api';
-import { Link } from 'react-router-dom'; 
 
 function UserProfile() {
-  const { user, loading: authLoading, showModal, login: authLogin } = useAuth();
+  const { user, loading: authLoading, showModal, token } = useAuth();
+  const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
   const [profileFormData, setProfileFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,6 +23,8 @@ function UserProfile() {
     newPassword: '',
     confirmNewPassword: '',
   });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [submittingPassword, setSubmittingPassword] = useState(false);
 
@@ -42,6 +44,53 @@ function UserProfile() {
     }
   }, [user, authLoading]);
 
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showModal({
+          isOpen: true,
+          title: 'Invalid File Type',
+          message: 'Please select a valid image file (JPEG, PNG, GIF, or WebP).',
+          type: 'error',
+        });
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        showModal({
+          isOpen: true,
+          title: 'File Too Large',
+          message: 'Please select an image smaller than 5MB.',
+          type: 'error',
+        });
+        return;
+      }
+
+      setSelectedFile(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove selected file
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfileFormData((prev) => ({ ...prev, [name]: value }));
@@ -58,21 +107,57 @@ function UserProfile() {
     setError(null);
 
     try {
-      const updatedData = {
-        firstName: profileFormData.firstName,
-        lastName: profileFormData.lastName,
-        profilePicture: profileFormData.profilePicture,
-        bio: profileFormData.bio,
-      };
-      const response = await updateUserProfile(user.userId, updatedData);
-      authLogin(user.token, { ...user, ...response.user });
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('firstName', profileFormData.firstName);
+      formData.append('lastName', profileFormData.lastName);
+      formData.append('bio', profileFormData.bio);
+
+      // Add file if selected
+      if (selectedFile) {
+        formData.append('profilePicture', selectedFile);
+      }
+
+      // Make API call with FormData
+      const response = await fetch(`http://localhost:3000/api/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+
+      const data = await response.json();
+
+      // Update user context with new data
+      const updatedUser = { ...user, ...data.user };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
       showModal({
         isOpen: true,
         title: 'Profile Updated!',
         message: 'Your profile has been updated successfully.',
         type: 'success',
       });
+
       setIsEditing(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+
+      // Update form data with new values
+      setProfileFormData({
+        firstName: data.user.firstName || '',
+        lastName: data.user.lastName || '',
+        email: data.user.email || '',
+        profilePicture: data.user.profilePicture || '',
+        bio: data.user.bio || '',
+      });
+
     } catch (err) {
       setError(err.message || 'Failed to update profile.');
       showModal({
@@ -124,170 +209,367 @@ function UserProfile() {
     }
   };
 
-  if (authLoading || loading) return <Loader />;
-  if (error && !user) return <div className="text-accent-error text-center p-6 text-xl">{error}</div>;
+  if (authLoading || loading) return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+    </div>
+  );
+
+  if (error && !user) return (
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
+      <div className="text-red-600 text-center p-6 text-xl bg-white rounded-lg shadow-lg">{error}</div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] py-8 px-4 font-sans flex justify-center">
-      <div className="container mx-auto max-w-5xl bg-[#FFFFFF] p-8 rounded-xl shadow-lg border border-[#E5E7EB]">
-        <h1 className="text-4xl font-bold text-[#1B3C53] text-center mb-8">Your Profile</h1>
-
-        {error && <p className="text-[#DC2626] text-center mb-6 text-lg">{error}</p>}
-
-        {user ? (
-          <>
-            <div className="flex flex-col lg:flex-row lg:space-x-8 mb-12">
-              {/* Profile Card Section */}
-              <div className="lg:w-1/3 mb-6 lg:mb-0">
-                <UserProfileCard user={user} />
-                <Button
-                  text={isEditing ? 'Cancel Edit' : 'Edit Profile'}
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="w-full mt-4 bg-[#1B3C53] text-white hover:bg-[#456882] transition-colors duration-200 rounded-md py-3 font-semibold text-base"
-                  variant={isEditing ? 'secondary' : 'default'}
-                />
-              </div>
-
-              {/* Profile Edit Form */}
-              <div className="lg:w-2/3">
-                <h2 className="text-2xl font-semibold text-[#1B3C53] mb-6 border-b-2 border-[#4A8292] pb-2">
-                  {isEditing ? 'Edit Profile Information' : 'Profile Details'}
-                </h2>
-                <form onSubmit={handleProfileSubmit} className="space-y-6">
-                  <div>
-                    <label htmlFor="firstName" className="block text-[#1B3C53] text-sm font-medium mb-2">First Name</label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={profileFormData.firstName}
-                      onChange={handleProfileChange}
-                      className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#F9FAFB] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
-                      required
-                      disabled={!isEditing || submittingProfile}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="lastName" className="block text-[#1B3C53] text-sm font-medium mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={profileFormData.lastName}
-                      onChange={handleProfileChange}
-                      className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#F9FAFB] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
-                      required
-                      disabled={!isEditing || submittingProfile}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-[#1B3C53] text-sm font-medium mb-2">Email</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={profileFormData.email}
-                      className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md bg-[#E5E7EB] text-[#6B7280] cursor-not-allowed"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="profilePicture" className="block text-[#1B3C53] text-sm font-medium mb-2">Profile Picture URL</label>
-                    <input
-                      type="url"
-                      id="profilePicture"
-                      name="profilePicture"
-                      value={profileFormData.profilePicture}
-                      onChange={handleProfileChange}
-                      className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#F9FAFB] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
-                      disabled={!isEditing || submittingProfile}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="bio" className="block text-[#1B3C53] text-sm font-medium mb-2">Bio</label>
-                    <textarea
-                      id="bio"
-                      name="bio"
-                      rows="4"
-                      value={profileFormData.bio}
-                      onChange={handleProfileChange}
-                      className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#F9FAFB] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
-                      disabled={!isEditing || submittingProfile}
-                    ></textarea>
-                  </div>
-                  {isEditing && (
-                    <Button
-                      text={submittingProfile ? 'Saving Profile...' : 'Save Profile'}
-                      type="submit"
-                      className="w-full bg-[#1B3C53] text-white hover:bg-[#456882] transition-colors duration-200 rounded-md py-3 font-semibold text-base"
-                      disabled={submittingProfile}
-                    />
-                  )}
-                </form>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome back, {user?.firstName}! 👋
+              </h1>
+              <p className="text-gray-600 mt-1">Manage your profile and account settings</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500">
+                Member since {new Date(user?.createdAt).toLocaleDateString()}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Change Password Section */}
-            <div className="mt-12 pt-8 border-t-2 border-[#E5E7EB]">
-              <h2 className="text-2xl font-semibold text-[#1B3C53] mb-6 border-b-2 border-[#4A8292] pb-2">Change Password</h2>
-              <form onSubmit={handleChangePasswordSubmit} className="max-w-lg mx-auto space-y-6">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <nav className="flex space-x-8">
+            {[
+              { id: 'profile', label: 'Profile', icon: '👤' },
+              { id: 'security', label: 'Security', icon: '🔒' },
+              { id: 'preferences', label: 'Preferences', icon: '⚙️' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="grid lg:grid-cols-3 gap-8"
+            >
+              {/* Profile Picture Section */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Profile Picture</h3>
+
+                  <div className="flex flex-col items-center">
+                    <div className="relative group">
+                      <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-500 p-1">
+                        <img
+                          src={previewUrl || (user?.profilePicture?.startsWith('http')
+                            ? user.profilePicture
+                            : `http://localhost:3000${user?.profilePicture}`
+                          ) || 'https://via.placeholder.com/150'}
+                          alt="Profile"
+                          className="w-full h-full rounded-full object-cover bg-white"
+                        />
+                      </div>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <span className="text-white text-sm font-medium">Change</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {isEditing && (
+                      <div className="mt-4 w-full">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                        >
+                          Upload New Photo
+                        </button>
+                        {selectedFile && (
+                          <button
+                            type="button"
+                            onClick={removeSelectedFile}
+                            className="w-full mt-2 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
+                          >
+                            Remove Selected
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 text-center">
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {user?.firstName} {user?.lastName}
+                    </h4>
+                    <p className="text-gray-600 capitalize">{user?.role}</p>
+                    <p className="text-sm text-gray-500 mt-2">{user?.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Information Form */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
+                    <button
+                      onClick={() => setIsEditing(!isEditing)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                        isEditing
+                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {isEditing ? 'Cancel' : 'Edit Profile'}
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleProfileSubmit} className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          id="firstName"
+                          name="firstName"
+                          value={profileFormData.firstName}
+                          onChange={handleProfileChange}
+                          disabled={!isEditing || submittingProfile}
+                          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 ${
+                            isEditing
+                              ? 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                              : 'border-gray-200 bg-gray-50'
+                          }`}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          id="lastName"
+                          name="lastName"
+                          value={profileFormData.lastName}
+                          onChange={handleProfileChange}
+                          disabled={!isEditing || submittingProfile}
+                          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 ${
+                            isEditing
+                              ? 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                              : 'border-gray-200 bg-gray-50'
+                          }`}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={profileFormData.email}
+                        disabled
+                        className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-lg text-gray-500"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                        Bio
+                      </label>
+                      <textarea
+                        id="bio"
+                        name="bio"
+                        rows="4"
+                        value={profileFormData.bio}
+                        onChange={handleProfileChange}
+                        disabled={!isEditing || submittingProfile}
+                        placeholder="Tell us about yourself..."
+                        className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 resize-none ${
+                          isEditing
+                            ? 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                            : 'border-gray-200 bg-gray-50'
+                        }`}
+                      />
+                    </div>
+
+                    {isEditing && (
+                      <div className="flex space-x-4 pt-4">
+                        <Button
+                          text={submittingProfile ? 'Saving...' : 'Save Changes'}
+                          type="submit"
+                          disabled={submittingProfile}
+                          className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setIsEditing(false)}
+                          disabled={submittingProfile}
+                          className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === 'security' && (
+            <motion.div
+              key="security"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-lg p-6"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Change Password</h3>
+
+              <form onSubmit={handleChangePasswordSubmit} className="space-y-6 max-w-md">
                 <div>
-                  <label htmlFor="currentPassword" className="block text-[#1B3C53] text-sm font-medium mb-2">Current Password</label>
+                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Current Password
+                  </label>
                   <input
                     type="password"
                     id="currentPassword"
                     name="currentPassword"
                     value={passwordFormData.currentPassword}
                     onChange={handlePasswordChange}
-                    className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#F9FAFB] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                     required
-                    disabled={submittingPassword}
                   />
                 </div>
+
                 <div>
-                  <label htmlFor="newPassword" className="block text-[#1B3C53] text-sm font-medium mb-2">New Password</label>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
                   <input
                     type="password"
                     id="newPassword"
                     name="newPassword"
                     value={passwordFormData.newPassword}
                     onChange={handlePasswordChange}
-                    className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#F9FAFB] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                     required
-                    disabled={submittingPassword}
                   />
                 </div>
+
                 <div>
-                  <label htmlFor="confirmNewPassword" className="block text-[#1B3C53] text-sm font-medium mb-2">Confirm New Password</label>
+                  <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm New Password
+                  </label>
                   <input
                     type="password"
                     id="confirmNewPassword"
                     name="confirmNewPassword"
                     value={passwordFormData.confirmNewPassword}
                     onChange={handlePasswordChange}
-                    className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#F9FAFB] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                     required
-                    disabled={submittingPassword}
                   />
                 </div>
+
                 <Button
-                  text={submittingPassword ? 'Changing Password...' : 'Change Password'}
+                  text={submittingPassword ? 'Updating...' : 'Update Password'}
                   type="submit"
-                  className="w-full bg-[#1B3C53] text-white hover:bg-[#456882] transition-colors duration-200 rounded-md py-3 font-semibold text-base"
                   disabled={submittingPassword}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                 />
               </form>
-            </div>
-          </>
-        ) : (
-          <p className="text-center text-[#6B7280] text-lg mt-8">
-            You are not logged in. Please{' '}
-            <Link to="/login" className="text-[#4A8292] hover:underline font-medium">
-              log in
-            </Link>{' '}
-            to view your profile.
-          </p>
-        )}
+            </motion.div>
+          )}
+
+          {/* Preferences Tab */}
+          {activeTab === 'preferences' && (
+            <motion.div
+              key="preferences"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-lg p-6"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Account Preferences</h3>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Email Notifications</h4>
+                    <p className="text-sm text-gray-600">Receive updates about your courses</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Marketing Emails</h4>
+                    <p className="text-sm text-gray-600">Receive promotional content and offers</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
