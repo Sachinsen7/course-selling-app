@@ -16,6 +16,8 @@ function CourseDetailsPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, showModal } = useAuth();
 
+  console.log('CourseDetailsPage - courseId from URL:', courseId);
+
   const [course, setCourse] = useState(null);
   const [relatedCourses, setRelatedCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,11 @@ function CourseDetailsPage() {
           numberOfReviews: reviewData.reviews.length,
           level: courseData.level || 'All Levels',
           lastUpdated: courseData.lastUpdated || 'N/A',
-          imageUrl: courseData.imageUrl || 'https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image',
+          imageUrl: courseData.imageUrl?.startsWith('http')
+            ? courseData.imageUrl
+            : courseData.imageUrl
+              ? `http://localhost:3000${courseData.imageUrl}`
+              : 'https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image',
           videoPreviewUrl: courseData.videoPreviewUrl || '',
           learningObjectives: courseData.learningObjectives || [
             'Learn key concepts and skills',
@@ -301,6 +307,9 @@ function CourseDetailsPage() {
                 src={course.imageUrl}
                 alt={course.title}
                 className="w-full h-48 object-cover rounded-xl shadow-md"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image';
+                }}
               />
             </div>
           </div>
@@ -371,6 +380,9 @@ function CourseDetailsPage() {
                 src={course.imageUrl}
                 alt={course.title}
                 className="w-full h-64 object-cover rounded-md px-4 pb-4"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image';
+                }}
               />
             </motion.section>
           )}
@@ -661,9 +673,16 @@ function CourseDetailsPage() {
                       className="block bg-[#FFFFFF] rounded-xl border border-[#E5E7EB] shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                     >
                       <img
-                        src={relatedCourse.imageUrl || 'https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image'}
+                        src={relatedCourse.imageUrl?.startsWith('http')
+                          ? relatedCourse.imageUrl
+                          : relatedCourse.imageUrl
+                            ? `http://localhost:3000${relatedCourse.imageUrl}`
+                            : 'https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image'}
                         alt={relatedCourse.title}
                         className="w-full h-32 object-cover rounded-t-xl"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/300x200/F8FAFC/1E293B?text=Course+Image';
+                        }}
                       />
                       <div className="p-4">
                         <h3 className="text-lg font-semibold text-[#1B3C53] mb-2 truncate">{relatedCourse.title}</h3>
@@ -747,7 +766,7 @@ function CourseDetailsPage() {
         </motion.aside>
       </div>
 
-      <style jsx>{`
+      <style jsx="true">{`
         @keyframes fadeIn {
           from {
             opacity: 0;
