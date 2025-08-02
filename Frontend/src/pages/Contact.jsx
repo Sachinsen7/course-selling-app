@@ -4,6 +4,7 @@ import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
 
 function Contact() {
+  const { showModal } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -12,7 +13,6 @@ function Contact() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
-  const { showModal } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
