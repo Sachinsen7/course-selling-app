@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { CourseModel, UserModel, SectionModel, LectureModel, QuizModel, QuestionModel, AssignmentSubmissionModel, UserLectureProgressModel, UserQuizAttemptModel} = require("../db/db");
 const authMiddleware = require("../middleware/auth");
+const { uploadCourseImage, handleUploadError, deleteOldCourseImage } = require("../middleware/upload");
 const z = require("zod");
 const mongoose = require("mongoose");
 
@@ -10,7 +11,6 @@ const instructorRouter = Router();
 const createCourseSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters long").max(100, "Title cannot exceed 100 characters").trim(),
     description: z.string().min(20, "Description must be at least 20 characters long").trim(),
-    imageUrl: z.string().url("Invalid image URL format").optional(),
     price: z.number().min(0, "Price cannot be negative").default(0),
     category: z.string().min(2, "Category must be at least 2 characters long").trim().optional(),
     status: z.enum(['draft', 'published', 'archived']).default('draft')
@@ -21,12 +21,11 @@ const updateCourseSchema = z.object({
     courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid course ID format"),
     title: z.string().min(5, "Title must be at least 5 characters long").max(100, "Title cannot exceed 100 characters").trim().optional(),
     description: z.string().min(20, "Description must be at least 20 characters long").trim().optional(),
-    imageUrl: z.string().url("Invalid image URL format").optional(),
     price: z.number().min(0, "Price cannot be negative").optional(),
     category: z.string().min(2, "Category must be at least 2 characters long").trim().optional(),
     status: z.enum(['draft', 'published', 'archived']).optional()
 }).refine(data => Object.keys(data).length > 1, {
-    message: "At least one field (title, description, imageUrl, price, category, status) must be provided for update."
+    message: "At least one field (title, description, price, category, status) must be provided for update."
 });
 
 // Zod schema for creating a section
@@ -184,42 +183,98 @@ const checkQuestionOwnership = async (questionId, instructorId) => {
 
 
 // Route to create a new course
-instructorRouter.post("/course", authMiddleware, async (req, res) => {
-    if (req.userRole !== 'instructor') {
-        return res.status(403).json({ message: "Access denied. Only instructors can create courses." });
-    }
-
-    const validationResult = createCourseSchema.safeParse(req.body);
-    if (!validationResult.success) {
-        return res.status(400).json({ message: "Invalid input data for course creation", errors: validationResult.error.errors });
-    }
-
-    const creatorId = req.userId;
+instructorRouter.post("/course", uploadCourseImage, authMiddleware, async (req, res) => {
     try {
-        const newCourse = await CourseModel.create({ ...validationResult.data, creatorId: creatorId });
+        if (req.userRole !== 'instructor') {
+            return res.status(403).json({ message: "Access denied. Only instructors can create courses." });
+        }
+
+        // Convert FormData string values to appropriate types
+        const processedBody = {
+            ...req.body,
+            price: req.body.price ? Number(req.body.price) : 0
+        };
+
+        // Validate processed data
+        const validationResult = createCourseSchema.safeParse(processedBody);
+        if (!validationResult.success) {
+            return res.status(400).json({
+                message: "Invalid input data for course creation",
+                errors: validationResult.error.errors
+            });
+        }
+
+        const courseData = validationResult.data;
+        const creatorId = req.userId;
+
+        // Handle course image upload
+        if (req.file) {
+            courseData.imageUrl = `/uploads/course-images/${req.file.filename}`;
+        } else {
+            // Set default course image if no image uploaded
+            courseData.imageUrl = 'https://via.placeholder.com/400x300/4A8292/FFFFFF?text=Course+Image';
+        }
+
+        const newCourse = await CourseModel.create({ ...courseData, creatorId: creatorId });
         await UserModel.findByIdAndUpdate(creatorId, { $addToSet: { createdCourses: newCourse._id } });
-        res.status(201).json({ message: "Course created successfully", courseId: newCourse._id });
+
+        res.status(201).json({
+            message: "Course created successfully",
+            courseId: newCourse._id,
+            course: newCourse
+        });
     } catch (error) {
         console.error("Error creating course:", error);
-        res.status(500).json({ message: "An error occurred while creating the course", error: error.message });
+        res.status(500).json({
+            message: "An error occurred while creating the course",
+            error: error.message
+        });
     }
-});
+}, handleUploadError);
 
 // Route to update an existing course
-instructorRouter.put("/course", authMiddleware, async (req, res) => {
-    if (req.userRole !== 'instructor') {
-        return res.status(403).json({ message: "Access denied. Only instructors can update courses." });
-    }
-
-    const validationResult = updateCourseSchema.safeParse(req.body);
-    if (!validationResult.success) {
-        return res.status(400).json({ message: "Invalid input data for course update", errors: validationResult.error.errors });
-    }
-
-    const creatorId = req.userId;
-    const { courseId, ...updateData } = validationResult.data;
-
+instructorRouter.put("/course", uploadCourseImage, authMiddleware, async (req, res) => {
     try {
+        if (req.userRole !== 'instructor') {
+            return res.status(403).json({ message: "Access denied. Only instructors can update courses." });
+        }
+
+        // Convert FormData string values to appropriate types
+        const processedBody = {
+            ...req.body,
+            price: req.body.price ? Number(req.body.price) : undefined
+        };
+
+        const validationResult = updateCourseSchema.safeParse(processedBody);
+        if (!validationResult.success) {
+            return res.status(400).json({
+                message: "Invalid input data for course update",
+                errors: validationResult.error.errors
+            });
+        }
+
+        const creatorId = req.userId;
+        const { courseId, ...updateData } = validationResult.data;
+
+        // Handle course image upload
+        if (req.file) {
+            // Get current course to delete old image
+            const currentCourse = await CourseModel.findOne({ _id: courseId, creatorId: creatorId });
+            if (currentCourse && currentCourse.imageUrl) {
+                deleteOldCourseImage(currentCourse.imageUrl);
+            }
+
+            // Set new image URL
+            updateData.imageUrl = `/uploads/course-images/${req.file.filename}`;
+        }
+
+        // Check if there's any data to update
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({
+                message: "At least one field must be provided for course update."
+            });
+        }
+
         const updatedCourse = await CourseModel.findOneAndUpdate(
             { _id: courseId, creatorId: creatorId },
             { $set: updateData },
@@ -229,12 +284,19 @@ instructorRouter.put("/course", authMiddleware, async (req, res) => {
         if (!updatedCourse) {
             return res.status(404).json({ message: "Course not found or you don't have permission to update it." });
         }
-        res.status(200).json({ message: "Course updated successfully", course: updatedCourse });
+
+        res.status(200).json({
+            message: "Course updated successfully",
+            course: updatedCourse
+        });
     } catch (error) {
         console.error("Error updating course:", error);
-        res.status(500).json({ message: "An error occurred while updating the course", error: error.message });
+        res.status(500).json({
+            message: "An error occurred while updating the course",
+            error: error.message
+        });
     }
-});
+}, handleUploadError);
 
 // Route to get all courses created by the authenticated instructor
 instructorRouter.get("/my-courses", authMiddleware, async (req, res) => {
