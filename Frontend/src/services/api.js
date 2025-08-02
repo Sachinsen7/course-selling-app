@@ -89,6 +89,44 @@ export const changePassword = async (currentPassword, newPassword) => {
   }
 };
 
+// --- WISHLIST API CALLS ---
+
+export const getWishlist = async () => {
+  try {
+    const response = await api.get("/user/wishlist");
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to fetch wishlist.");
+  }
+};
+
+export const addToWishlist = async (courseId) => {
+  try {
+    const response = await api.post("/user/wishlist", { courseId });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to add course to wishlist.");
+  }
+};
+
+export const removeFromWishlist = async (courseId) => {
+  try {
+    const response = await api.delete(`/user/wishlist/${courseId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to remove course from wishlist.");
+  }
+};
+
+export const checkWishlistStatus = async (courseId) => {
+  try {
+    const response = await api.get(`/user/wishlist/check/${courseId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to check wishlist status.");
+  }
+};
+
 // --- COURSE  API CALLS ---
 
 export const getCourses = async (filters = {}) => {
