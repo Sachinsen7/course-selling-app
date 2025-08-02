@@ -5,12 +5,11 @@ const z = require("zod");
 
 const enrollmentRouter = Router();
 
-// Zod schema for course purchase/enrollment
+
 const purchaseSchema = z.object({
     courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid course ID format")
 });
 
-// Zod schema for marking lecture complete/updating progress
 const lectureProgressSchema = z.object({
     lectureId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid lecture ID format"),
     isCompleted: z.boolean().optional(),
@@ -19,7 +18,7 @@ const lectureProgressSchema = z.object({
     message: "Either isCompleted or lastWatchedPosition must be provided for update."
 });
 
-// Zod schema for submitting quiz answers
+
 const submitQuizSchema = z.object({
     quizId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid quiz ID format"),
     answers: z.array(z.object({
@@ -28,7 +27,7 @@ const submitQuizSchema = z.object({
     }))
 });
 
-// Zod schema for submitting an assignment
+
 const submitAssignmentSchema = z.object({
     lectureId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid lecture ID format"),
     submissionUrl: z.string().url("Invalid submission URL format").optional(),
@@ -38,7 +37,6 @@ const submitAssignmentSchema = z.object({
 });
 
 
-// Route to purchase/enroll in a course
 enrollmentRouter.post("/enroll", authMiddleware, async (req, res) => {
     if (req.userRole !== 'learner' && req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied. Only learners or instructors can enroll in courses." });
@@ -88,7 +86,7 @@ enrollmentRouter.post("/enroll", authMiddleware, async (req, res) => {
     }
 });
 
-// Route to get all courses purchased/enrolled by a user
+
 enrollmentRouter.get("/purchased-courses", authMiddleware, async (req, res) => {
     if (req.userRole !== 'learner' && req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied." });
@@ -111,8 +109,14 @@ enrollmentRouter.get("/purchased-courses", authMiddleware, async (req, res) => {
     }
 });
 
-// Route to get details of a specific enrolled course
+
 enrollmentRouter.get("/purchased-courses/:courseId", authMiddleware, async (req, res) => {
+  console.log('GET /purchased-courses/:courseId called with:', {
+    courseId: req.params.courseId,
+    userId: req.userId,
+    userRole: req.userRole
+  });
+
   if (req.userRole !== "learner" && req.userRole !== "instructor") {
     return res.status(403).json({ message: "Access denied." });
   }
@@ -121,6 +125,7 @@ enrollmentRouter.get("/purchased-courses/:courseId", authMiddleware, async (req,
   const courseId = req.params.courseId;
 
   if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
+    console.log('Invalid course ID format:', courseId);
     return res.status(400).json({ message: "Invalid course ID format." });
   }
 
