@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
 
 
 dotenv.config();
@@ -23,6 +24,9 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.get("/", (req, res) => {
