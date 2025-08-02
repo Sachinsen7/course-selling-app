@@ -44,26 +44,63 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      const decodedUser = decodeToken(storedToken);
-      if (decodedUser && decodedUser.id && decodedUser.role) {
-        setToken(storedToken);
-        setUser({
-          userId: decodedUser.id,
-          role: decodedUser.role,
-          firstName: decodedUser.firstName || 'User',
-          lastName: decodedUser.lastName || '',
-        });
-      } else {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
+  // Function to fetch complete user profile
+  const fetchCompleteUserProfile = useCallback(async (token) => {
+    try {
+      const response = await fetch('http://localhost:3000/api/user/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('AuthContext - Setting complete user data:', data.user);
+        setUser(data.user);
+        return data.user;
       }
+    } catch (error) {
+      console.error('Failed to fetch complete user profile:', error);
     }
-    setLoading(false); 
-  }, [decodeToken]);
+    return null;
+  }, []);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        const decodedUser = decodeToken(storedToken);
+        if (decodedUser && decodedUser.id && decodedUser.role) {
+          setToken(storedToken);
+
+          // First set basic user data from token
+          const basicUser = {
+            userId: decodedUser.id,
+            role: decodedUser.role,
+            firstName: decodedUser.firstName || 'User',
+            lastName: decodedUser.lastName || '',
+            email: decodedUser.email || '',
+            profilePicture: decodedUser.profilePicture || null,
+            bio: decodedUser.bio || '',
+          };
+          console.log('AuthContext - Setting basic user data from token:', basicUser);
+          setUser(basicUser);
+
+          // Then fetch complete profile data
+          await fetchCompleteUserProfile(storedToken);
+        } else {
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
+  }, [decodeToken, fetchCompleteUserProfile]);
 
   
   const login = useCallback(async (credentials) => {
@@ -72,7 +109,15 @@ export const AuthProvider = ({ children }) => {
       const data = await authServiceLogin(credentials.email, credentials.password);
       localStorage.setItem('token', data.token);
       setToken(data.token);
-      setUser({ userId: data.userId, role: data.role, firstName: data.firstName, lastName: data.lastName });
+      setUser({
+        userId: data.userId,
+        role: data.role,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: credentials.email,
+        profilePicture: data.profilePicture || null,
+        bio: data.bio || ''
+      });
       setModal({
         isOpen: true,
         title: 'Login Successful!',
@@ -105,7 +150,15 @@ export const AuthProvider = ({ children }) => {
       const data = await authServiceSignup(userData.email, userData.password, userData.firstName, userData.lastName, userData.role);
       localStorage.setItem('token', data.token);
       setToken(data.token);
-      setUser({ userId: data.userId, role: data.role, firstName: userData.firstName, lastName: userData.lastName });
+      setUser({
+        userId: data.userId,
+        role: data.role,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        profilePicture: data.profilePicture || null,
+        bio: data.bio || ''
+      });
       setModal({
         isOpen: true,
         title: "Signup Successful!",
@@ -145,11 +198,18 @@ export const AuthProvider = ({ children }) => {
   
   const showModal = useCallback((newModalProps) => {
     setModal(prev => ({
-      ...prev, 
-      ...newModalProps, 
+      ...prev,
+      ...newModalProps,
     }));
   }, []);
 
+  // Function to update user data in context
+  const updateUser = useCallback((updatedUserData) => {
+    setUser(prev => ({
+      ...prev,
+      ...updatedUserData
+    }));
+  }, []);
 
   const contextValue = React.useMemo(() => ({
     token,
@@ -159,8 +219,9 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    showModal 
-  }), [token, user, loading, login, signup, logout, showModal]);
+    showModal,
+    updateUser
+  }), [token, user, loading, login, signup, logout, showModal, updateUser]);
 
   return (
     <AuthContext.Provider value={contextValue}>
