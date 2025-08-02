@@ -28,6 +28,7 @@ function InstructorCourseFormPage() {
   const [error, setError] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // Separate useEffect for auth check
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'instructor')) {
       navigate(PROTECTED_ROUTES.dashboard, { replace: true });
@@ -37,6 +38,12 @@ function InstructorCourseFormPage() {
         message: 'You must be an instructor to manage courses.',
         type: 'error',
       });
+    }
+  }, [authLoading, user, navigate, showModal]);
+
+  // Separate useEffect for data fetching
+  useEffect(() => {
+    if (authLoading || !user || user.role !== 'instructor') {
       return;
     }
 
@@ -58,18 +65,19 @@ function InstructorCourseFormPage() {
               description: courseToEdit.description,
               imageUrl: courseToEdit.imageUrl,
               price: courseToEdit.price.toString(),
-              category: courseToEdit.category?._id || '',
+              category: courseToEdit.category?._id || (categoryData.categories[0]?._id || ''),
               status: courseToEdit.status,
             });
-            if (categoryData.categories.length > 0 && !courseToEdit.category) {
-              setFormData((prev) => ({ ...prev, category: categoryData.categories[0]._id }));
-            }
           } else {
             setError("Course not found or you don't own it.");
           }
         } else {
+          // New course - set default category
           if (categoryData.categories.length > 0) {
-            setFormData((prev) => ({ ...prev, category: categoryData.categories[0]._id }));
+            setFormData(prev => ({
+              ...prev,
+              category: prev.category || categoryData.categories[0]._id
+            }));
           }
         }
       } catch (err) {
@@ -86,13 +94,13 @@ function InstructorCourseFormPage() {
       }
     };
 
-    if (!authLoading && user && user.role === 'instructor') {
-      fetchData();
-    }
-  }, [courseId, user, authLoading, navigate, showModal]);
+    fetchData();
+  }, [courseId, user, authLoading]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log('Input changed:', name, value);
+
     if (name === 'price') {
       if (/^\d*\.?\d*$/.test(value)) {
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -105,10 +113,13 @@ function InstructorCourseFormPage() {
   // Handle file selection
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
+    console.log('File selected:', file);
+
     if (file) {
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
+        console.error('Invalid file type:', file.type);
         showModal({
           isOpen: true,
           title: 'Invalid File Type',
@@ -120,6 +131,7 @@ function InstructorCourseFormPage() {
 
       // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
+        console.error('File too large:', file.size);
         showModal({
           isOpen: true,
           title: 'File Too Large',
@@ -129,14 +141,21 @@ function InstructorCourseFormPage() {
         return;
       }
 
+      console.log('File validation passed. Setting selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
       setSelectedFile(file);
 
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
+        console.log('Preview URL created successfully');
         setPreviewUrl(e.target.result);
       };
+      reader.onerror = (e) => {
+        console.error('FileReader error:', e);
+      };
       reader.readAsDataURL(file);
+    } else {
+      console.log('No file selected');
     }
   };
 
@@ -235,9 +254,19 @@ function InstructorCourseFormPage() {
         formDataToSubmit.append('status', formData.status);
 
         if (selectedFile) {
+          console.log('Appending course image to FormData:', selectedFile.name);
           formDataToSubmit.append('courseImage', selectedFile);
+        } else {
+          console.log('No course image selected');
         }
 
+        // Debug FormData contents
+        console.log('FormData contents:');
+        for (let [key, value] of formDataToSubmit.entries()) {
+          console.log(key, value);
+        }
+
+        console.log('Sending POST request to create course...');
         response = await fetch(`http://localhost:3000/api/instructor/course`, {
           method: 'POST',
           headers: {
@@ -603,7 +632,7 @@ function InstructorCourseFormPage() {
 
           <Button
             text={submitting ? 'Saving...' : isEditMode ? 'Update Course' : 'Create Course'}
-            type="submit"
+            onClick={handleSubmit}
             className="w-full px-6 py-3 bg-[#1B3C53] text-white hover:bg-[#456882] transition-all duration-200 ease-in-out transform hover:scale-105 rounded-md font-semibold text-base shadow-md"
             disabled={submitting || categories.length === 0}
             aria-label={isEditMode ? 'Update course details' : 'Create new course'}
@@ -616,7 +645,7 @@ function InstructorCourseFormPage() {
         </form>
       </div>
 
-      <style jsx>{`
+      <style jsx="true">{`
         @keyframes fadeIn {
           from {
             opacity: 0;
