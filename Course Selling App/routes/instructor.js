@@ -182,22 +182,31 @@ const checkQuestionOwnership = async (questionId, instructorId) => {
 
 
 
-// Route to create a new course
-instructorRouter.post("/course", uploadCourseImage, authMiddleware, async (req, res) => {
+
+instructorRouter.post("/course", authMiddleware, uploadCourseImage, async (req, res) => {
     try {
+        console.log('POST /course called with:', {
+            body: req.body,
+            file: req.file,
+            userId: req.userId,
+            userRole: req.userRole
+        });
+
         if (req.userRole !== 'instructor') {
             return res.status(403).json({ message: "Access denied. Only instructors can create courses." });
         }
 
-        // Convert FormData string values to appropriate types
+
         const processedBody = {
             ...req.body,
             price: req.body.price ? Number(req.body.price) : 0
         };
 
-        // Validate processed data
+        console.log('Processed body:', processedBody);
+
         const validationResult = createCourseSchema.safeParse(processedBody);
         if (!validationResult.success) {
+            console.log('Validation failed:', validationResult.error.errors);
             return res.status(400).json({
                 message: "Invalid input data for course creation",
                 errors: validationResult.error.errors
@@ -207,15 +216,30 @@ instructorRouter.post("/course", uploadCourseImage, authMiddleware, async (req, 
         const courseData = validationResult.data;
         const creatorId = req.userId;
 
-        // Handle course image upload
+        console.log('Course data after validation:', courseData);
+
         if (req.file) {
+            console.log('File uploaded successfully:', {
+                filename: req.file.filename,
+                originalname: req.file.originalname,
+                size: req.file.size,
+                path: req.file.path
+            });
             courseData.imageUrl = `/uploads/course-images/${req.file.filename}`;
         } else {
-            // Set default course image if no image uploaded
+            console.log('No file uploaded, using placeholder');
             courseData.imageUrl = 'https://via.placeholder.com/400x300/4A8292/FFFFFF?text=Course+Image';
         }
 
+        console.log('Final course data with image URL:', courseData);
+
         const newCourse = await CourseModel.create({ ...courseData, creatorId: creatorId });
+        console.log('Course created successfully:', {
+          courseId: newCourse._id,
+          title: newCourse.title,
+          imageUrl: newCourse.imageUrl
+        });
+
         await UserModel.findByIdAndUpdate(creatorId, { $addToSet: { createdCourses: newCourse._id } });
 
         res.status(201).json({
@@ -232,21 +256,31 @@ instructorRouter.post("/course", uploadCourseImage, authMiddleware, async (req, 
     }
 }, handleUploadError);
 
-// Route to update an existing course
-instructorRouter.put("/course", uploadCourseImage, authMiddleware, async (req, res) => {
+
+instructorRouter.put("/course", authMiddleware, uploadCourseImage, async (req, res) => {
     try {
+        console.log('PUT /course called with:', {
+            body: req.body,
+            file: req.file,
+            userId: req.userId,
+            userRole: req.userRole
+        });
+
         if (req.userRole !== 'instructor') {
             return res.status(403).json({ message: "Access denied. Only instructors can update courses." });
         }
 
-        // Convert FormData string values to appropriate types
+
         const processedBody = {
             ...req.body,
             price: req.body.price ? Number(req.body.price) : undefined
         };
 
+        console.log('Processed body for update:', processedBody);
+
         const validationResult = updateCourseSchema.safeParse(processedBody);
         if (!validationResult.success) {
+            console.log('Update validation failed:', validationResult.error.errors);
             return res.status(400).json({
                 message: "Invalid input data for course update",
                 errors: validationResult.error.errors
@@ -256,19 +290,18 @@ instructorRouter.put("/course", uploadCourseImage, authMiddleware, async (req, r
         const creatorId = req.userId;
         const { courseId, ...updateData } = validationResult.data;
 
-        // Handle course image upload
+
         if (req.file) {
-            // Get current course to delete old image
             const currentCourse = await CourseModel.findOne({ _id: courseId, creatorId: creatorId });
             if (currentCourse && currentCourse.imageUrl) {
                 deleteOldCourseImage(currentCourse.imageUrl);
             }
 
-            // Set new image URL
+
             updateData.imageUrl = `/uploads/course-images/${req.file.filename}`;
         }
 
-        // Check if there's any data to update
+   
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({
                 message: "At least one field must be provided for course update."
@@ -298,7 +331,6 @@ instructorRouter.put("/course", uploadCourseImage, authMiddleware, async (req, r
     }
 }, handleUploadError);
 
-// Route to get all courses created by the authenticated instructor
 instructorRouter.get("/my-courses", authMiddleware, async (req, res) => {
     if (req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied. Only instructors can view their courses." });
@@ -321,7 +353,7 @@ instructorRouter.get("/my-courses", authMiddleware, async (req, res) => {
     }
 });
 
-// Route to delete a course
+
 instructorRouter.delete("/course/:courseId", authMiddleware, async (req, res) => {
     if (req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied. Only instructors can delete courses." });
