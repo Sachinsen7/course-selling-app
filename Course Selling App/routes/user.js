@@ -29,16 +29,14 @@ const changePasswordSchema = z.object({
     path: ["confirmNewPassword"],
 });
 
-// Wishlist validation schema
 const wishlistSchema = z.object({
     courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid course ID format")
 });
 
 
-// Middleware to protect all user routes
 userRouter.use(authMiddleware);
 
-// Get user profile (authenticated user)
+
 userRouter.get("/profile", async (req, res) => {
     try {
         const user = await UserModel.findById(req.userId).select('-password'); // Exclude password
@@ -52,10 +50,9 @@ userRouter.get("/profile", async (req, res) => {
     }
 });
 
-// Update user profile (authenticated user)
+
 userRouter.put("/profile", uploadProfilePicture, async (req, res) => {
     try {
-        // Validate text fields
         const validationResult = updateUserProfileSchema.safeParse(req.body);
         if (!validationResult.success) {
             return res.status(400).json({
@@ -66,19 +63,18 @@ userRouter.put("/profile", uploadProfilePicture, async (req, res) => {
 
         const updateData = validationResult.data;
 
-        // Handle profile picture upload
+ 
         if (req.file) {
-            // Get current user to delete old profile picture
             const currentUser = await UserModel.findById(req.userId);
             if (currentUser && currentUser.profilePicture) {
                 deleteOldProfilePicture(currentUser.profilePicture);
             }
 
-            // Set new profile picture URL
+       
             updateData.profilePicture = `/uploads/profile-pictures/${req.file.filename}`;
         }
 
-        // Check if there's any data to update
+       
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({
                 message: "At least one field must be provided for profile update."
@@ -108,7 +104,6 @@ userRouter.put("/profile", uploadProfilePicture, async (req, res) => {
     }
 }, handleUploadError);
 
-// Change user password (authenticated user)
 userRouter.put("/change-password", async (req, res) => {
     const validationResult = changePasswordSchema.safeParse(req.body);
     if (!validationResult.success) {
@@ -139,7 +134,7 @@ userRouter.put("/change-password", async (req, res) => {
     }
 });
 
-// Get user's wishlist
+
 userRouter.get("/wishlist", async (req, res) => {
     try {
         const user = await UserModel.findById(req.userId)
@@ -160,7 +155,6 @@ userRouter.get("/wishlist", async (req, res) => {
     }
 });
 
-// Add course to wishlist
 userRouter.post("/wishlist", async (req, res) => {
     const validationResult = wishlistSchema.safeParse(req.body);
     if (!validationResult.success) {
@@ -170,29 +164,28 @@ userRouter.post("/wishlist", async (req, res) => {
     const { courseId } = validationResult.data;
 
     try {
-        // Check if course exists
         const course = await CourseModel.findById(courseId);
         if (!course) {
             return res.status(404).json({ message: "Course not found." });
         }
 
-        // Check if user exists
+        
         const user = await UserModel.findById(req.userId);
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
 
-        // Check if course is already in wishlist
+ 
         if (user.wishlist.includes(courseId)) {
             return res.status(409).json({ message: "Course is already in your wishlist." });
         }
 
-        // Check if user is already enrolled in the course
+       
         if (user.enrolledCourses.includes(courseId)) {
             return res.status(409).json({ message: "You are already enrolled in this course." });
         }
 
-        // Add course to wishlist
+  
         await UserModel.findByIdAndUpdate(
             req.userId,
             { $addToSet: { wishlist: courseId } },
@@ -206,7 +199,7 @@ userRouter.post("/wishlist", async (req, res) => {
     }
 });
 
-// Remove course from wishlist
+
 userRouter.delete("/wishlist/:courseId", async (req, res) => {
     const courseId = req.params.courseId;
     const validationResult = wishlistSchema.safeParse({ courseId });
@@ -221,12 +214,12 @@ userRouter.delete("/wishlist/:courseId", async (req, res) => {
             return res.status(404).json({ message: "User not found." });
         }
 
-        // Check if course is in wishlist
+  
         if (!user.wishlist.includes(courseId)) {
             return res.status(404).json({ message: "Course not found in your wishlist." });
         }
 
-        // Remove course from wishlist
+     
         await UserModel.findByIdAndUpdate(
             req.userId,
             { $pull: { wishlist: courseId } },
@@ -240,7 +233,6 @@ userRouter.delete("/wishlist/:courseId", async (req, res) => {
     }
 });
 
-// Check if course is in user's wishlist
 userRouter.get("/wishlist/check/:courseId", async (req, res) => {
     const courseId = req.params.courseId;
     const validationResult = wishlistSchema.safeParse({ courseId });
