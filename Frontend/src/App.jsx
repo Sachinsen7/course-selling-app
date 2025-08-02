@@ -95,7 +95,7 @@ function App() {
           <Route
             path={PROTECTED_ROUTES.checkout}
             element={
-              <PrivateRoutes allowedRoles={['learner']}>
+              <PrivateRoutes allowedRoles={['learner', 'instructor', 'admin']}>
                 <CheckoutPage />
               </PrivateRoutes>
             }
