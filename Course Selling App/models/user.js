@@ -50,6 +50,12 @@ const UserSchema = new Schema(
         ref: "Course",
       },
     ],
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+      },
+    ],
   },
   {
     timestamps: true,
