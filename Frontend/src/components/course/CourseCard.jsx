@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../common/Button';
+import WishlistButton from '../common/WishlistButton';
+import AddToCartButton from '../common/AddToCartButton';
 import { useAuth } from '../../context/AuthContext';
 import { PUBLIC_ROUTES, PROTECTED_ROUTES } from '../../routes';
 
@@ -51,6 +53,15 @@ function CourseCard({ course, className }) {
               {course.category.name || course.category}
             </span>
           )}
+          {/* Wishlist Button */}
+          <div className="absolute top-3 right-3">
+            <WishlistButton
+              courseId={course._id}
+              courseTitle={course.title}
+              size="md"
+              variant="default"
+            />
+          </div>
           <motion.div
             className="absolute inset-0 bg-[#1B3C53]/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             initial={{ opacity: 0 }}
@@ -75,7 +86,7 @@ function CourseCard({ course, className }) {
           <p className="text-[#6B7280] text-sm mb-3 line-clamp-2 leading-relaxed">{course.description}</p>
           <div className="flex justify-between items-center mb-2">
             <span className="text-lg font-bold text-[#1B3C53]">
-              {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
+              {course.price === 0 ? 'Free' : `₹${course.price.toFixed(2)}`}
             </span>
             <span className="text-sm text-[#6B7280] flex items-center">
               <svg className="w-4 h-4 mr-1 text-[#D97706]" fill="currentColor" viewBox="0 0 24 24">
@@ -85,13 +96,28 @@ function CourseCard({ course, className }) {
             </span>
           </div>
           {course.creatorId && (
-            <p className="text-[#6B7280] text-xs flex items-center">
+            <p className="text-[#6B7280] text-xs flex items-center mb-3">
               <svg className="w-3 h-3 mr-1 text-[#4A8292]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               By: {course.creatorId.firstName} {course.creatorId.lastName || course.creatorId.secondName}
             </p>
           )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
+            <AddToCartButton
+              course={course}
+              size="sm"
+              variant="outline"
+              showText={false}
+            />
+            <Button
+              text="View Details"
+              onClick={handleEnroll}
+              className="flex-1 px-3 py-2 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-medium transition-all duration-200 text-sm"
+            />
+          </div>
         </div>
       </motion.div>
     </Link>

@@ -5,6 +5,7 @@ import { getCourseById, getEnrolledCourseDetails, enrollInCourse, addReview, get
 import { useAuth } from '../context/AuthContext';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
+import WishlistButton from '../components/common/WishlistButton';
 import CourseCurriculum from '../components/course/CourseCurriculum';
 import Review from '../components/course/Review';
 import InstructorProfile from '../components/InstructorProfile';
@@ -253,34 +254,46 @@ function CourseDetailsPage() {
               )}
               <div className="flex items-center gap-4">
                 <span className="text-2xl font-bold text-[#1B3C53]">
-                  {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
+                  {course.price === 0 ? 'Free' : `₹${course.price.toFixed(2)}`}
                 </span>
-                {!isEnrolled ? (
-                  <Button
-                    text={course.price === 0 ? 'Enroll Now' : 'Buy Now'}
-                    onClick={handleEnroll}
-                    className="px-6 py-2 bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
-                    aria-label={course.price === 0 ? 'Enroll in course for free' : 'Purchase course'}
-                  >
-                    <svg className="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {course.price === 0 ? 'Enroll Now' : 'Buy Now'}
-                  </Button>
-                ) : (
-                  <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
+                <div className="flex items-center gap-3">
+                  {!isEnrolled ? (
                     <Button
-                      text="Go to Course"
-                      className="px-6 py-2 bg-[#4A8292] text-[#FFFFFF] hover:bg-[#5B9EB3] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
-                      aria-label="Go to enrolled course"
+                      text={course.price === 0 ? 'Enroll Now' : 'Buy Now'}
+                      onClick={handleEnroll}
+                      className="px-6 py-2 bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
+                      aria-label={course.price === 0 ? 'Enroll in course for free' : 'Purchase course'}
                     >
                       <svg className="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
-                      Go to Course
+                      {course.price === 0 ? 'Enroll Now' : 'Buy Now'}
                     </Button>
-                  </Link>
-                )}
+                  ) : (
+                    <Link to={`${PROTECTED_ROUTES.courseLearning(courseId)}`}>
+                      <Button
+                        text="Go to Course"
+                        className="px-6 py-2 bg-[#4A8292] text-[#FFFFFF] hover:bg-[#5B9EB3] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
+                        aria-label="Go to enrolled course"
+                      >
+                        <svg className="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                        Go to Course
+                      </Button>
+                    </Link>
+                  )}
+                  {/* Wishlist Button - Show only if not enrolled */}
+                  {!isEnrolled && (
+                    <WishlistButton
+                      courseId={courseId}
+                      courseTitle={course.title}
+                      size="lg"
+                      variant="default"
+                      showText={true}
+                    />
+                  )}
+                </div>
               </div>
             </div>
             <div className="hidden lg:block lg:w-80 mt-8 lg:mt-0">
@@ -304,7 +317,7 @@ function CourseDetailsPage() {
       >
         <div className="container mx-auto flex justify-between items-center">
           <span className="text-lg font-bold text-[#1B3C53]">
-            {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
+            {course.price === 0 ? 'Free' : `₹${course.price.toFixed(2)}`}
           </span>
           {!isEnrolled ? (
             <Button
@@ -656,7 +669,7 @@ function CourseDetailsPage() {
                         <h3 className="text-lg font-semibold text-[#1B3C53] mb-2 truncate">{relatedCourse.title}</h3>
                         <p className="text-sm text-[#6B7280] mb-2 line-clamp-2">{relatedCourse.description}</p>
                         <p className="text-sm text-[#1B3C53] font-medium">
-                          {relatedCourse.price === 0 ? 'Free' : `$${relatedCourse.price.toFixed(2)}`}
+                          {relatedCourse.price === 0 ? 'Free' : `₹${relatedCourse.price.toFixed(2)}`}
                         </p>
                       </div>
                     </Link>
@@ -682,7 +695,7 @@ function CourseDetailsPage() {
             />
             <div className="text-center">
               <span className="text-xl font-bold text-[#1B3C53] mb-4 block">
-                {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
+                {course.price === 0 ? 'Free' : `₹${course.price.toFixed(2)}`}
               </span>
               {!isEnrolled ? (
                 <Button

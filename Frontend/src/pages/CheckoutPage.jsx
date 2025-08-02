@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../hooks/useCart';
 import { getCourseById, processPayment } from '../services/api';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
@@ -9,13 +11,33 @@ import { PUBLIC_ROUTES, PROTECTED_ROUTES } from '../routes';
 function CheckoutPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, showModal } = useAuth();
+  const { cartItems, getCartSummary, clearCart } = useCart();
   const location = useLocation();
-  const { courseId } = location.state || {}; 
 
-  const [course, setCourse] = useState(null);
+  // Can come from cart or single course purchase
+  const { course: singleCourse, cartItems: passedCartItems, cartSummary: passedCartSummary } = location.state || {};
+  const { courseId } = location.state || {};
+
+  const [course, setCourse] = useState(singleCourse || null);
+  const [checkoutItems, setCheckoutItems] = useState([]);
+  const [orderSummary, setOrderSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentDetails, setPaymentDetails] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardholderName: '',
+    billingAddress: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: ''
+    }
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -49,14 +71,69 @@ function CheckoutPage() {
           message: err.message || "Failed to load course details for checkout.",
           type: "error",
         });
-        navigate(PUBLIC_ROUTES.courseListing, { replace: true }); 
+        navigate(PUBLIC_ROUTES.courseListing, { replace: true });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCourseDetails();
-  }, [courseId, isAuthenticated, navigate, showModal]);
+    const initializeCheckout = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Check if coming from cart
+        if (passedCartItems && passedCartSummary) {
+          setCheckoutItems(passedCartItems);
+          setOrderSummary(passedCartSummary);
+        }
+        // Check if coming from current cart
+        else if (cartItems.length > 0) {
+          setCheckoutItems(cartItems);
+          setOrderSummary(getCartSummary());
+        }
+        // Single course checkout
+        else if (courseId || singleCourse) {
+          if (singleCourse) {
+            const courseItem = {
+              ...singleCourse,
+              addedAt: new Date().toISOString()
+            };
+            setCheckoutItems([courseItem]);
+            setOrderSummary({
+              subtotal: singleCourse.price || 0,
+              tax: (singleCourse.price || 0) * 0.1,
+              total: (singleCourse.price || 0) * 1.1,
+              itemCount: 1,
+              items: [courseItem]
+            });
+          } else {
+            // Fetch course details for single course
+            await fetchCourseDetails();
+            return; // fetchCourseDetails will handle the rest
+          }
+        } else {
+          setError("No items to checkout. Please add courses to your cart first.");
+        }
+      } catch (err) {
+        setError(err.message || "Failed to load checkout details.");
+        showModal({
+          isOpen: true,
+          title: "Error",
+          message: err.message || "Failed to load checkout details.",
+          type: "error",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (courseId && !singleCourse) {
+      fetchCourseDetails();
+    } else {
+      initializeCheckout();
+    }
+  }, [courseId, singleCourse, passedCartItems, passedCartSummary, cartItems, isAuthenticated, navigate, showModal, getCartSummary]);
 
   const handlePayment = async () => {
     setSubmitting(true);
@@ -115,7 +192,7 @@ function CheckoutPage() {
             <h2 className="text-2xl font-bold text-text-primary mb-sm">{course.title}</h2>
             <p className="text-text-secondary mb-sm">{course.description.substring(0, 100)}...</p>
             <p className="text-primary-main text-xl font-bold">
-              Total: {course.price === 0 ? 'Free' : `$${course.price.toFixed(2)}`}
+              Total: {course.price === 0 ? 'Free' : `₹${course.price.toFixed(2)}`}
             </p>
           </div>
         </div>
@@ -167,7 +244,7 @@ function CheckoutPage() {
                     </div>
                 </div>
                 <Button
-                    text={submitting ? 'Processing Payment...' : `Pay $${course.price.toFixed(2)}`}
+                    text={submitting ? 'Processing Payment...' : `Pay ₹${course.price.toFixed(2)}`}
                     onClick={handlePayment}
                     className="w-full px-xl py-md text-lg"
                     disabled={submitting}
