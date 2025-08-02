@@ -41,9 +41,16 @@ function CourseCard({ course, className }) {
       >
         <div className="relative">
           <img
-            src={course.imageUrl || 'https://via.placeholder.com/400x250/F9FAFB/1B3C53?text=Course+Image'}
+            src={course.imageUrl?.startsWith('http')
+              ? course.imageUrl
+              : course.imageUrl
+                ? `http://localhost:3000${course.imageUrl}`
+                : 'https://via.placeholder.com/400x250/F9FAFB/1B3C53?text=Course+Image'}
             alt={course.title}
             className="w-full h-48 object-cover"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/400x250/F9FAFB/1B3C53?text=Course+Image';
+            }}
           />
           {course.category && (
             <span className="absolute top-3 left-3 bg-[#4A8292] text-[#FFFFFF] text-xs font-medium px-2 py-1 rounded-full flex items-center">
