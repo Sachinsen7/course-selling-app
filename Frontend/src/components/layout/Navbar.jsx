@@ -13,16 +13,20 @@ function Navbar() {
   const { cartCount } = useCart();
   const location = useLocation();
 
-  // State management
+  // Debug user data changes
+  React.useEffect(() => {
+    console.log('Navbar - User data changed:', user);
+  }, [user]);
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Refs for click outside detection
+
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-  // Handle scroll effect
+ 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -31,7 +35,7 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Handle click outside to close dropdowns
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -45,15 +49,24 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menu on route change
+
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
   }, [location.pathname]);
 
-  // Helper functions
+
   const getProfilePicture = () => {
-    return user?.profilePicture || `https://placehold.co/40x40/F9F3EF/1B3C53?text=${user?.firstName ? user.firstName[0].toUpperCase() : 'U'}`;
+    if (user?.profilePicture) {
+      // If it's a full URL, use it directly
+      if (user.profilePicture.startsWith('http')) {
+        return user.profilePicture;
+      }
+      // If it's a relative path, prepend the server URL
+      return `http://localhost:3000${user.profilePicture}`;
+    }
+    // Fallback to placeholder with user's initial
+    return `https://placehold.co/40x40/F9F3EF/1B3C53?text=${user?.firstName ? user.firstName[0].toUpperCase() : 'U'}`;
   };
 
   const getPrimaryDashboardLink = () => {
@@ -67,7 +80,7 @@ function Navbar() {
     return location.pathname === path;
   };
 
-  // Navigation items
+
   const navigationItems = [
     { name: 'Courses', path: PUBLIC_ROUTES.courseListing },
     { name: 'About', path: PUBLIC_ROUTES.about },
@@ -87,7 +100,6 @@ function Navbar() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -103,7 +115,7 @@ function Navbar() {
             </Link>
           </motion.div>
 
-          {/* Desktop Navigation */}
+       
           <div className="hidden md:flex items-center space-x-8">
             {navigationItems.map((item) => (
               <Link
@@ -129,14 +141,13 @@ function Navbar() {
             ))}
           </div>
 
-          {/* Right side icons and user menu */}
+  
           <div className="hidden md:flex items-center space-x-4">
-            {/* Wishlist Icon - Only show for authenticated users */}
             {isAuthenticated && (
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                 <Link
                   to={PROTECTED_ROUTES.wishlist}
-                  className="relative p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100"
+                  className="relative flex items-center justify-center p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100 w-10 h-10"
                   title="My Wishlist"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,12 +167,12 @@ function Navbar() {
               </motion.div>
             )}
 
-            {/* Cart Icon - Only show for authenticated users */}
+
             {isAuthenticated && (
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                 <Link
                   to={PROTECTED_ROUTES.cart}
-                  className="relative p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100"
+                  className="relative flex items-center justify-center p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100 w-10 h-10"
                   title="Shopping Cart"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +181,7 @@ function Navbar() {
                   {/* Cart count badge */}
                   {cartCount > 0 && (
                     <motion.span
-                      className="absolute -top-1 -right-1 bg-primary-main text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
+                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -182,11 +193,10 @@ function Navbar() {
               </motion.div>
             )}
 
-            {/* Notifications Icon - Only show for authenticated users */}
             {isAuthenticated && (
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                 <button
-                  className="relative p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100"
+                  className="relative flex items-center justify-center p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100 w-10 h-10"
                   title="Notifications"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +236,7 @@ function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50"
+                    className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50"
                   >
                     {/* User Info */}
                     <div className="px-4 py-3 border-b border-gray-100">
@@ -237,10 +247,12 @@ function Navbar() {
                           className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
                         />
                         <div>
-                          <p className="font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="font-semibold text-gray-900">
+                            {user?.firstName || 'User'} {user?.lastName || ''}
+                          </p>
+                          <p className="text-sm text-gray-500">{user?.email || ''}</p>
                           <span className="inline-block px-2 py-1 text-xs bg-primary-main/10 text-primary-main rounded-full capitalize">
-                            {user.role}
+                            {user?.role || 'user'}
                           </span>
                         </div>
                       </div>
@@ -390,8 +402,10 @@ function Navbar() {
                         className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
                       />
                       <div>
-                        <p className="font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="font-semibold text-gray-900">
+                          {user?.firstName || 'User'} {user?.lastName || ''}
+                        </p>
+                        <p className="text-sm text-gray-500">{user?.email || ''}</p>
                       </div>
                     </div>
 
