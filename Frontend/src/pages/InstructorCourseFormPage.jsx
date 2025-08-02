@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { createCourse, updateInstructorCourse, getInstructorCourses, getAllCategories } from '../services/api';
@@ -9,7 +9,8 @@ import { PROTECTED_ROUTES } from '../routes';
 function InstructorCourseFormPage() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading, showModal } = useAuth();
+  const { user, loading: authLoading, showModal, token } = useAuth();
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -19,6 +20,8 @@ function InstructorCourseFormPage() {
     category: '',
     status: 'draft',
   });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -99,55 +102,161 @@ function InstructorCourseFormPage() {
     }
   };
 
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showModal({
+          isOpen: true,
+          title: 'Invalid File Type',
+          message: 'Please select a valid image file (JPEG, PNG, GIF, or WebP).',
+          type: 'error',
+        });
+        return;
+      }
+
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        showModal({
+          isOpen: true,
+          title: 'File Too Large',
+          message: 'Please select an image smaller than 10MB.',
+          type: 'error',
+        });
+        return;
+      }
+
+      setSelectedFile(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove selected file
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
-    const dataToSubmit = { ...formData };
-    dataToSubmit.price = Number(formData.price) || 0;
-
-    if (!dataToSubmit.title || dataToSubmit.title.length < 5) {
+    // Validation
+    if (!formData.title || formData.title.length < 5) {
       setError('Title must be at least 5 characters long.');
       setSubmitting(false);
       return;
     }
-    if (!dataToSubmit.description || dataToSubmit.description.length < 20) {
+    if (!formData.description || formData.description.length < 20) {
       setError('Description must be at least 20 characters long.');
       setSubmitting(false);
       return;
     }
-    if (!dataToSubmit.category) {
+    if (!formData.category) {
       setError('Please select a category.');
       setSubmitting(false);
       return;
     }
-    if (dataToSubmit.price < 0) {
+    const price = Number(formData.price) || 0;
+    if (price < 0) {
       setError('Price must be a non-negative number.');
       setSubmitting(false);
       return;
     }
 
-    if (!dataToSubmit.imageUrl) {
-      dataToSubmit.imageUrl = 'https://placehold.co/600x400/cccccc/333333?text=Course+Image';
-    }
-
     try {
       let response;
+
       if (isEditMode) {
-        response = await updateInstructorCourse(courseId, dataToSubmit);
+        // For updates, use FormData if there's a new file, otherwise use JSON
+        if (selectedFile) {
+          const formDataToSubmit = new FormData();
+          formDataToSubmit.append('courseId', courseId);
+          formDataToSubmit.append('title', formData.title);
+          formDataToSubmit.append('description', formData.description);
+          formDataToSubmit.append('price', price);
+          formDataToSubmit.append('category', formData.category);
+          formDataToSubmit.append('status', formData.status);
+          formDataToSubmit.append('courseImage', selectedFile);
+
+          response = await fetch(`http://localhost:3000/api/instructor/course`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formDataToSubmit,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update course');
+          }
+
+          response = await response.json();
+        } else {
+          // No new file, use regular JSON update
+          const dataToSubmit = {
+            courseId,
+            title: formData.title,
+            description: formData.description,
+            price,
+            category: formData.category,
+            status: formData.status,
+          };
+          response = await updateInstructorCourse(courseId, dataToSubmit);
+        }
+
         showModal({
           isOpen: true,
           title: 'Course Updated!',
-          message: `${dataToSubmit.title} has been updated successfully.`,
+          message: `${formData.title} has been updated successfully.`,
           type: 'success',
         });
       } else {
-        response = await createCourse(dataToSubmit);
+        // For creation, always use FormData
+        const formDataToSubmit = new FormData();
+        formDataToSubmit.append('title', formData.title);
+        formDataToSubmit.append('description', formData.description);
+        formDataToSubmit.append('price', price);
+        formDataToSubmit.append('category', formData.category);
+        formDataToSubmit.append('status', formData.status);
+
+        if (selectedFile) {
+          formDataToSubmit.append('courseImage', selectedFile);
+        }
+
+        response = await fetch(`http://localhost:3000/api/instructor/course`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formDataToSubmit,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create course');
+        }
+
+        response = await response.json();
+
         showModal({
           isOpen: true,
           title: 'Course Created!',
-          message: `${dataToSubmit.title} has been created successfully.`,
+          message: `${formData.title} has been created successfully.`,
           type: 'success',
         });
       }
@@ -266,36 +375,76 @@ function InstructorCourseFormPage() {
                 </div>
               </div>
 
+              {/* Course Image Upload */}
               <div className="relative">
-                <label htmlFor="imageUrl" className="block text-[#1B3C53] text-sm font-medium mb-2">
-                  Image URL (Optional)
+                <label className="block text-[#1B3C53] text-sm font-medium mb-2">
+                  Course Image
                 </label>
-                <div className="relative">
-                  <input
-                    type="url"
-                    id="imageUrl"
-                    name="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={handleChange}
-                    placeholder="e.g., https://your-image-url.com/course.jpg"
-                    className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] bg-[#FFFFFF] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed transition-all duration-200"
-                    disabled={submitting}
-                    aria-describedby="imageUrl-error"
-                  />
-                  <svg
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#4A8292]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
+
+                {/* Image Preview */}
+                <div className="mb-4">
+                  <div className="w-full h-48 border-2 border-dashed border-[#E5E7EB] rounded-lg overflow-hidden bg-[#F9FAFB] flex items-center justify-center">
+                    {previewUrl || (formData.imageUrl && !selectedFile) ? (
+                      <img
+                        src={previewUrl || (formData.imageUrl?.startsWith('http')
+                          ? formData.imageUrl
+                          : `http://localhost:3000${formData.imageUrl}`
+                        )}
+                        alt="Course preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <svg className="mx-auto h-12 w-12 text-[#6B7280]" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <p className="mt-2 text-sm text-[#6B7280]">No image selected</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {/* Upload Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={submitting}
+                    className="flex-1 bg-[#4A8292] text-white py-2 px-4 rounded-md hover:bg-[#1B3C53] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
+                  >
+                    {selectedFile ? 'Change Image' : 'Upload Image'}
+                  </button>
+
+                  {(selectedFile || previewUrl) && (
+                    <button
+                      type="button"
+                      onClick={removeSelectedFile}
+                      disabled={submitting}
+                      className="bg-[#DC2626] text-white py-2 px-4 rounded-md hover:bg-[#B91C1C] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                {selectedFile && (
+                  <p className="mt-2 text-sm text-[#6B7280]">
+                    Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+
+                <p className="mt-2 text-xs text-[#6B7280]">
+                  Supported formats: JPEG, PNG, GIF, WebP. Max size: 10MB.
+                </p>
               </div>
             </div>
           </fieldset>
