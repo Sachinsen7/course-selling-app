@@ -35,14 +35,21 @@ function CartPage() {
   };
 
   const handleCheckout = () => {
-    if (proceedToCheckout()) {
-      navigate(PROTECTED_ROUTES.checkout, { 
-        state: { 
-          cartItems,
-          cartSummary 
-        } 
-      });
+    console.log('Checkout clicked, cart items:', cartItems);
+    console.log('Cart summary:', cartSummary);
+
+    if (cartItems.length === 0) {
+      alert('Your cart is empty. Add some courses before proceeding to checkout.');
+      return;
     }
+
+    console.log('Navigating to checkout...');
+    navigate(PROTECTED_ROUTES.checkout, {
+      state: {
+        cartItems,
+        cartSummary
+      }
+    });
   };
 
   if (!isAuthenticated) {
