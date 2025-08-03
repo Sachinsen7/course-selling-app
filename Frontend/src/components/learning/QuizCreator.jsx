@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { createQuiz, createQuestion, getQuizForInstructor } from '../../services/api';
+import { createQuiz, createQuestion, getQuizForInstructor, updateLecture } from '../../services/api';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 
@@ -34,6 +34,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
   ];
 
   const handleQuizDataChange = useCallback((e) => {
+    e.stopPropagation();
     const { name, value, type, checked } = e.target;
     setQuizData(prev => ({
       ...prev,
@@ -44,6 +45,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
   }, []);
 
   const handleQuestionChange = useCallback((e) => {
+    e.stopPropagation();
     const { name, value } = e.target;
     setCurrentQuestion(prev => ({
       ...prev,
@@ -51,7 +53,8 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     }));
   }, []);
 
-  const handleOptionChange = useCallback((index, field, value) => {
+  const handleOptionChange = useCallback((index, field, value, event = null) => {
+    if (event) event.stopPropagation();
     setCurrentQuestion(prev => ({
       ...prev,
       options: prev.options.map((option, i) =>
@@ -60,14 +63,16 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     }));
   }, []);
 
-  const addOption = useCallback(() => {
+  const addOption = useCallback((e) => {
+    if (e) e.stopPropagation();
     setCurrentQuestion(prev => ({
       ...prev,
       options: [...prev.options, { text: '', isCorrect: false }]
     }));
   }, []);
 
-  const removeOption = useCallback((index) => {
+  const removeOption = useCallback((index, e) => {
+    if (e) e.stopPropagation();
     if (currentQuestion.options.length > 2) {
       setCurrentQuestion(prev => ({
         ...prev,
@@ -76,7 +81,8 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     }
   }, [currentQuestion.options.length]);
 
-  const handleAddQuestion = useCallback(() => {
+  const handleAddQuestion = useCallback((e) => {
+    if (e) e.stopPropagation();
     setCurrentQuestion({
       text: '',
       type: 'multiple-choice',
@@ -89,13 +95,15 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     setShowQuestionForm(true);
   }, [questions.length]);
 
-  const handleEditQuestion = useCallback((index) => {
+  const handleEditQuestion = useCallback((index, e) => {
+    if (e) e.stopPropagation();
     setCurrentQuestion(questions[index]);
     setEditingQuestionIndex(index);
     setShowQuestionForm(true);
   }, [questions]);
 
-  const handleSaveQuestion = useCallback(() => {
+  const handleSaveQuestion = useCallback((e) => {
+    if (e) e.stopPropagation();
     // Validation
     if (!currentQuestion.text.trim()) {
       showModal({
@@ -149,18 +157,42 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
 
     if (editingQuestionIndex >= 0) {
       setQuestions(prev => prev.map((q, i) => i === editingQuestionIndex ? questionToSave : q));
+      showModal({
+        isOpen: true,
+        title: 'Question Updated',
+        message: 'Question has been successfully updated!',
+        type: 'success'
+      });
     } else {
       setQuestions(prev => [...prev, questionToSave]);
+      showModal({
+        isOpen: true,
+        title: 'Question Added',
+        message: 'Question has been successfully added to the quiz!',
+        type: 'success'
+      });
     }
 
+    // Reset form and close modal
+    setCurrentQuestion({
+      text: '',
+      type: 'multiple-choice',
+      options: [{ text: '', isCorrect: false }, { text: '', isCorrect: false }],
+      correctAnswer: '',
+      points: 1,
+      order: 0
+    });
+    setEditingQuestionIndex(-1);
     setShowQuestionForm(false);
   }, [currentQuestion, editingQuestionIndex, showModal]);
 
-  const handleDeleteQuestion = useCallback((index) => {
+  const handleDeleteQuestion = useCallback((index, e) => {
+    if (e) e.stopPropagation();
     setQuestions(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleCreateQuiz = useCallback(async () => {
+  const handleCreateQuiz = useCallback(async (e) => {
+    if (e) e.stopPropagation();
     if (!quizData.title.trim()) {
       showModal({
         isOpen: true,
@@ -196,6 +228,8 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
       const quizId = quizResponse.quiz._id;
       setCreatedQuizId(quizId);
 
+      console.log('Quiz created successfully:', { quizId, lectureId, quizResponse });
+
       // Create questions for the quiz
       for (let i = 0; i < questions.length; i++) {
         const question = questions[i];
@@ -210,6 +244,15 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         };
 
         await createQuestion(questionPayload);
+      }
+
+      // Update the lecture to link it with the created quiz
+      try {
+        await updateLecture(lectureId, { quizId });
+        console.log('Lecture updated with quiz ID:', { lectureId, quizId });
+      } catch (updateError) {
+        console.error('Failed to update lecture with quiz ID:', updateError);
+        // Don't fail the entire process if lecture update fails
       }
 
       showModal({
@@ -233,13 +276,61 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     }
   }, [quizData, questions, lectureId, showModal, onQuizCreated]);
 
-  // Memoized close handler for question form
-  const handleQuestionFormClose = useCallback(() => {
+  // Check if question form has unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    if (editingQuestionIndex >= 0) {
+      const originalQuestion = questions[editingQuestionIndex];
+      return (
+        currentQuestion.text !== originalQuestion.text ||
+        currentQuestion.type !== originalQuestion.type ||
+        currentQuestion.points !== originalQuestion.points ||
+        currentQuestion.correctAnswer !== originalQuestion.correctAnswer ||
+        JSON.stringify(currentQuestion.options) !== JSON.stringify(originalQuestion.options)
+      );
+    } else {
+      return (
+        currentQuestion.text.trim() !== '' ||
+        currentQuestion.correctAnswer.trim() !== '' ||
+        currentQuestion.options.some(opt => opt.text.trim() !== '')
+      );
+    }
+  }, [currentQuestion, questions, editingQuestionIndex]);
+
+  // Memoized close handler for question form - only close on explicit user action
+  const handleQuestionFormClose = useCallback((e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    // Check for unsaved changes and confirm before closing
+    if (hasUnsavedChanges()) {
+      const confirmClose = window.confirm(
+        'You have unsaved changes. Are you sure you want to close without saving?'
+      );
+      if (!confirmClose) {
+        return; // Don't close if user cancels
+      }
+    }
+
+    // Reset form state when closing
+    setCurrentQuestion({
+      text: '',
+      type: 'multiple-choice',
+      options: [{ text: '', isCorrect: false }, { text: '', isCorrect: false }],
+      correctAnswer: '',
+      points: 1,
+      order: 0
+    });
+    setEditingQuestionIndex(-1);
     setShowQuestionForm(false);
-  }, []);
+  }, [hasUnsavedChanges]);
 
   return (
-    <div className="bg-[#FFFFFF] p-6 rounded-xl border border-[#E5E7EB] shadow-sm">
+    <div
+      className="bg-[#FFFFFF] p-6 rounded-xl border border-[#E5E7EB] shadow-sm"
+      onClick={(e) => e.stopPropagation()}
+    >
       <h3 className="text-2xl font-bold text-[#1B3C53] mb-6">Create Quiz</h3>
       
       {/* Quiz Basic Info */}
@@ -255,9 +346,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
             name="title"
             value={quizData.title}
             onChange={handleQuizDataChange}
+            onFocus={(e) => e.stopPropagation()}
+            onBlur={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             placeholder="Enter quiz title..."
             className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF]"
             disabled={submitting}
+            autoComplete="off"
           />
         </div>
 
@@ -271,10 +366,14 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
             name="description"
             value={quizData.description}
             onChange={handleQuizDataChange}
+            onFocus={(e) => e.stopPropagation()}
+            onBlur={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             placeholder="Enter quiz description..."
             rows="3"
             className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF] resize-vertical"
             disabled={submitting}
+            autoComplete="off"
           />
         </div>
 
@@ -290,10 +389,14 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
               name="passPercentage"
               value={quizData.passPercentage}
               onChange={handleQuizDataChange}
+              onFocus={(e) => e.stopPropagation()}
+              onBlur={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               min="0"
               max="100"
               className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53]"
               disabled={submitting}
+              autoComplete="off"
             />
           </div>
 
@@ -305,6 +408,9 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
                 name="isPublished"
                 checked={quizData.isPublished}
                 onChange={handleQuizDataChange}
+                onFocus={(e) => e.stopPropagation()}
+                onBlur={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 className="mr-2 accent-[#4A8292] focus:ring-[#4A8292]"
                 disabled={submitting}
               />
@@ -320,7 +426,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
           <h4 className="text-lg font-semibold text-[#1B3C53]">Questions ({questions.length})</h4>
           <Button
             text="Add Question"
-            onClick={handleAddQuestion}
+            onClick={(e) => handleAddQuestion(e)}
             className="px-4 py-2 bg-[#4A8292] text-white hover:bg-[#1B3C53] rounded-md font-medium transition-all duration-200"
             disabled={submitting}
           />
@@ -339,13 +445,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
                   <div className="flex space-x-2">
                     <Button
                       text="Edit"
-                      onClick={() => handleEditQuestion(index)}
+                      onClick={(e) => handleEditQuestion(index, e)}
                       className="px-3 py-1 text-xs bg-[#E5E7EB] text-[#1B3C53] hover:bg-[#D1D5DB] rounded"
                       disabled={submitting}
                     />
                     <Button
                       text="Delete"
-                      onClick={() => handleDeleteQuestion(index)}
+                      onClick={(e) => handleDeleteQuestion(index, e)}
                       className="px-3 py-1 text-xs bg-[#DC2626] text-white hover:bg-[#B91C1C] rounded"
                       disabled={submitting}
                     />
@@ -379,7 +485,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
       <div className="border-t border-[#E5E7EB] pt-6 mt-6">
         <Button
           text={submitting ? 'Creating Quiz...' : 'Create Quiz'}
-          onClick={handleCreateQuiz}
+          onClick={(e) => handleCreateQuiz(e)}
           className="w-full px-6 py-3 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
           disabled={submitting || questions.length === 0}
         />
@@ -389,11 +495,46 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
       <Modal
         key="question-form-modal"
         isOpen={showQuestionForm}
-        onClose={handleQuestionFormClose}
+        onClose={() => {}} // Disable backdrop close - only allow explicit close
         title={editingQuestionIndex >= 0 ? 'Edit Question' : 'Add New Question'}
         type="info"
+        zIndex={1100}
       >
-        <div className="space-y-4">
+        <div
+          className="space-y-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
+        >
+          {/* Custom Close Button */}
+          <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#E5E7EB]">
+            <div>
+              <h3 className="text-lg font-semibold text-[#1B3C53]">
+                {editingQuestionIndex >= 0 ? 'Edit Question' : 'Add New Question'}
+              </h3>
+              <p className="text-xs text-[#6B7280] mt-1">
+                Fill in all required fields and click "Add Question" to save
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleQuestionFormClose(e);
+              }}
+              className="text-[#6B7280] hover:text-[#1B3C53] transition-colors focus:outline-none focus:ring-2 focus:ring-[#4A8292] p-1 rounded"
+              aria-label="Close question form"
+              type="button"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
           <div>
             <label htmlFor="questionText" className="block text-[#1B3C53] text-sm font-semibold mb-2">
               Question Text
@@ -404,10 +545,15 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
               name="text"
               value={currentQuestion.text}
               onChange={handleQuestionChange}
+              onFocus={(e) => e.stopPropagation()}
+              onBlur={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
               placeholder="Enter your question..."
               rows="3"
               className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF] resize-vertical"
               required
+              autoComplete="off"
             />
           </div>
 
@@ -422,6 +568,9 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
                 name="type"
                 value={currentQuestion.type}
                 onChange={handleQuestionChange}
+                onFocus={(e) => e.stopPropagation()}
+                onBlur={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] appearance-none"
               >
                 {questionTypes.map(type => (
@@ -441,8 +590,12 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
                 name="points"
                 value={currentQuestion.points}
                 onChange={handleQuestionChange}
+                onFocus={(e) => e.stopPropagation()}
+                onBlur={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 min="1"
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53]"
+                autoComplete="off"
               />
             </div>
           </div>
@@ -456,7 +609,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
                 </label>
                 <Button
                   text="Add Option"
-                  onClick={addOption}
+                  onClick={(e) => addOption(e)}
                   className="px-3 py-1 text-xs bg-[#4A8292] text-white hover:bg-[#1B3C53] rounded"
                 />
               </div>
@@ -467,21 +620,28 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
                       key={`option-checkbox-${index}`}
                       type="checkbox"
                       checked={option.isCorrect}
-                      onChange={(e) => handleOptionChange(index, 'isCorrect', e.target.checked)}
+                      onChange={(e) => handleOptionChange(index, 'isCorrect', e.target.checked, e)}
+                      onFocus={(e) => e.stopPropagation()}
+                      onBlur={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                       className="accent-[#4A8292] focus:ring-[#4A8292]"
                     />
                     <input
                       key={`option-text-${index}`}
                       type="text"
                       value={option.text}
-                      onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
+                      onChange={(e) => handleOptionChange(index, 'text', e.target.value, e)}
+                      onFocus={(e) => e.stopPropagation()}
+                      onBlur={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                       placeholder={`Option ${index + 1}`}
                       className="flex-1 px-3 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF]"
+                      autoComplete="off"
                     />
                     {currentQuestion.options.length > 2 && (
                       <Button
                         text="×"
-                        onClick={() => removeOption(index)}
+                        onClick={(e) => removeOption(index, e)}
                         className="px-2 py-1 text-sm bg-[#DC2626] text-white hover:bg-[#B91C1C] rounded"
                       />
                     )}
@@ -514,24 +674,38 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
                 name="correctAnswer"
                 value={currentQuestion.correctAnswer}
                 onChange={handleQuestionChange}
+                onFocus={(e) => e.stopPropagation()}
+                onBlur={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="Enter the correct answer..."
                 className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF]"
                 required
+                autoComplete="off"
               />
               <p className="text-xs text-[#6B7280] mt-1">This will be used for automatic grading (case-insensitive)</p>
             </div>
           )}
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-[#E5E7EB] mt-6">
             <Button
               text="Cancel"
-              onClick={handleQuestionFormClose}
-              className="px-4 py-2 bg-[#E5E7EB] text-[#1B3C53] hover:bg-[#D1D5DB] rounded-md font-medium"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleQuestionFormClose(e);
+              }}
+              className="px-6 py-2 bg-[#E5E7EB] text-[#1B3C53] hover:bg-[#D1D5DB] rounded-md font-medium transition-colors"
+              aria-label="Cancel question creation"
             />
             <Button
               text={editingQuestionIndex >= 0 ? 'Update Question' : 'Add Question'}
-              onClick={handleSaveQuestion}
-              className="px-4 py-2 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-medium"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleSaveQuestion(e);
+              }}
+              className="px-6 py-2 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-medium transition-colors shadow-sm"
+              aria-label={editingQuestionIndex >= 0 ? 'Update this question' : 'Add this question to the quiz'}
             />
           </div>
         </div>
