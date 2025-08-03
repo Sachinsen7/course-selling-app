@@ -67,6 +67,15 @@ function InstructorCourseContentPage() {
   const [showQuizCreator, setShowQuizCreator] = useState(false);
   const [currentQuizLecture, setCurrentQuizLecture] = useState(null);
 
+  // Debug: Track state changes
+  useEffect(() => {
+    console.log(' showQuizCreator changed to:', showQuizCreator);
+  }, [showQuizCreator]);
+
+  useEffect(() => {
+    console.log(' currentQuizLecture changed to:', currentQuizLecture);
+  }, [currentQuizLecture]);
+
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     itemType: '',
@@ -89,6 +98,16 @@ function InstructorCourseContentPage() {
       }
 
       const sections = Array.isArray(courseDetails.sections) ? courseDetails.sections : [];
+
+      // Debug: Log quiz lectures and their quizId
+      sections.forEach(section => {
+        section.lectures.forEach(lecture => {
+          if (lecture.type === 'quiz') {
+            console.log(`Frontend - Quiz lecture "${lecture.title}" has quizId:`, lecture.quizId);
+          }
+        });
+      });
+
       setCourse({ ...courseDetails, sections });
       setSectionFormData((prev) => ({
         ...prev,
@@ -391,14 +410,27 @@ function InstructorCourseContentPage() {
 
   // Handle quiz creation
   const handleCreateQuizForLecture = useCallback((lectureId) => {
+    console.log(' Create Quiz button clicked for lecture:', lectureId);
+    console.log(' Setting currentQuizLecture to:', lectureId);
     setCurrentQuizLecture(lectureId);
+    console.log(' Setting showQuizCreator to true');
     setShowQuizCreator(true);
+    console.log(' Quiz creator modal should now be open');
+
+    // Debug: Check state after a brief delay
+    setTimeout(() => {
+      console.log(' State check - showQuizCreator should be true, currentQuizLecture should be:', lectureId);
+    }, 100);
   }, []);
 
   const handleQuizCreated = useCallback((quizId) => {
     setShowQuizCreator(false);
     setCurrentQuizLecture(null);
-    fetchCourseContent(); // Refresh to show the quiz
+    console.log('Quiz created with ID:', quizId, 'refreshing course content...');
+    // Add a small delay to ensure backend has processed the update
+    setTimeout(() => {
+      fetchCourseContent(); // Refresh to show the quiz
+    }, 500);
   }, [fetchCourseContent]);
 
   // Memoized modal close handlers
@@ -718,7 +750,11 @@ function InstructorCourseContentPage() {
                                 {lecture.type === 'quiz' && !lecture.quizId && (
                                   <Button
                                     text="Create Quiz"
-                                    onClick={() => handleCreateQuizForLecture(lecture._id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      handleCreateQuizForLecture(lecture._id);
+                                    }}
                                     className="px-3 py-1 bg-[#059669] text-[#FFFFFF] hover:bg-[#047857] rounded-md text-xs font-medium transition-all duration-200"
                                     aria-label={`Create quiz for ${lecture.title}`}
                                   />
@@ -1107,7 +1143,11 @@ function InstructorCourseContentPage() {
                     </p>
                     <Button
                       text="Create Quiz Questions"
-                      onClick={() => handleCreateQuizForLecture(currentLecture._id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleCreateQuizForLecture(currentLecture._id);
+                      }}
                       className="px-4 py-2 bg-[#F59E0B] text-white hover:bg-[#D97706] rounded-md font-medium transition-all duration-200"
                       disabled={submitting}
                     />
@@ -1219,6 +1259,7 @@ function InstructorCourseContentPage() {
         <Modal
           isOpen={showQuizCreator}
           onClose={() => {
+            console.log(' Quiz creator modal closing');
             setShowQuizCreator(false);
             setCurrentQuizLecture(null);
           }}
@@ -1226,14 +1267,22 @@ function InstructorCourseContentPage() {
           type="info"
           size="large"
         >
-          {currentQuizLecture && (
-            <QuizCreator
-              lectureId={currentQuizLecture}
-              courseId={courseId}
-              onQuizCreated={handleQuizCreated}
-              showModal={showModal}
-              token={token}
-            />
+          {currentQuizLecture ? (
+            <>
+              {console.log('Rendering QuizCreator for lecture:', currentQuizLecture)}
+              <QuizCreator
+                lectureId={currentQuizLecture}
+                courseId={courseId}
+                onQuizCreated={handleQuizCreated}
+                showModal={showModal}
+                token={token}
+              />
+            </>
+          ) : (
+            <>
+              {console.log('🎯 No currentQuizLecture, not rendering QuizCreator')}
+              <div>No lecture selected</div>
+            </>
           )}
         </Modal>
       </div>
