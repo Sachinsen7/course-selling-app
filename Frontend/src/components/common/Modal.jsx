@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { twMerge } from 'tailwind-merge';
 import Button from './Button';
 
-function Modal({ isOpen, onClose, title, message, type = 'info', children, loading = false }) {
+function Modal({ isOpen, onClose, title, message, type = 'info', children, loading = false, zIndex = 1000 }) {
   const modalRef = useRef(null);
 
   const handleEscape = useCallback(
@@ -79,7 +79,8 @@ function Modal({ isOpen, onClose, title, message, type = 'info', children, loadi
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-[#1B3C53]/50 backdrop-blur-sm font-sans"
+          className={`fixed inset-0 flex items-center justify-center p-4 bg-[#1B3C53]/50 backdrop-blur-sm font-sans`}
+          style={{ zIndex }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -164,6 +165,7 @@ Modal.propTypes = {
   type: PropTypes.oneOf(['info', 'success', 'error', 'warning']),
   children: PropTypes.node,
   loading: PropTypes.bool,
+  zIndex: PropTypes.number,
 };
 
 Modal.defaultProps = {
