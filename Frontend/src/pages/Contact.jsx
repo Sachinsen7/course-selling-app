@@ -29,9 +29,12 @@ function Contact() {
       showModal({
         isOpen: true,
         title: 'Message Sent',
-        message: 'We’ve received your message and will respond soon.',
+        message: 'Weve received your message and will respond soon.',
         type: 'success',
-        onClose: () => {}, 
+        onClose: () => {
+          // Close the modal properly
+          showModal({ isOpen: false });
+        }, 
       });
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
@@ -40,7 +43,10 @@ function Contact() {
         title: 'Submission Failed',
         message: 'An error occurred. Please try again later.',
         type: 'error',
-        onClose: () => {}, 
+        onClose: () => {
+          // Close the modal properly
+          showModal({ isOpen: false });
+        }, 
       });
     } finally {
       setSubmitting(false);
