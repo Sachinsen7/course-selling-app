@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { CourseModel, UserModel, SectionModel, LectureModel, QuizModel, QuestionModel, AssignmentSubmissionModel, UserLectureProgressModel, UserQuizAttemptModel} = require("../db/db");
 const authMiddleware = require("../middleware/auth");
-const { uploadCourseImage, handleUploadError, deleteOldCourseImage } = require("../middleware/upload");
+const { uploadCourseImage, uploadVideo, handleUploadError, deleteOldCourseImage, deleteOldVideo } = require("../middleware/upload");
 const z = require("zod");
 const mongoose = require("mongoose");
 
@@ -565,6 +565,32 @@ instructorRouter.delete('/section/:sectionId', authMiddleware, async (req, res) 
 
 
 // Lecture Routes 
+
+// Route to upload video for a lecture
+instructorRouter.post("/upload-video", authMiddleware, uploadVideo, async (req, res) => {
+    try {
+        if (req.userRole !== 'instructor') {
+            return res.status(403).json({ message: "Access denied. Only instructors can upload videos." });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: "No video file uploaded." });
+        }
+
+        // Return the video URL
+        const videoUrl = `/uploads/videos/${req.file.filename}`;
+
+        res.status(200).json({
+            message: "Video uploaded successfully",
+            videoUrl: videoUrl,
+            filename: req.file.filename,
+            size: req.file.size
+        });
+    } catch (error) {
+        console.error("Error uploading video:", error);
+        res.status(500).json({ message: "An error occurred while uploading the video", error: error.message });
+    }
+});
 
 // Route to create a new lecture for a section
 instructorRouter.post("/lecture", authMiddleware, async (req, res) => {
