@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Button from '../components/common/Button'; 
+import Button from '../components/common/Button';
+import GoogleOAuthButton from '../components/auth/GoogleOAuthButton';
 import { AUTH_ROUTES, PROTECTED_ROUTES } from '../routes';
 
 function Login() {
@@ -68,6 +69,20 @@ function Login() {
           </div>
           <Button text={loading ? 'Logging In...' : 'Login'} type="submit" className="w-full" disabled={loading} />
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-6">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="px-4 text-text-secondary text-sm">or</span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        {/* Google OAuth Button */}
+        <GoogleOAuthButton
+          text="Continue with Google"
+          disabled={loading}
+        />
+
         <p className="text-center text-text-secondary text-sm mt-6">
           Don't have an account?{' '}
           <Link to={AUTH_ROUTES.signup} className="text-primary-main hover:underline">
