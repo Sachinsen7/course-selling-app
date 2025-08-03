@@ -47,3 +47,5 @@ console.log('• GET  /api/auth/google - Start OAuth flow');
 console.log('• GET  /api/auth/google/callback - OAuth callback');
 console.log('• GET  /api/auth/me - Get current user');
 console.log('• POST /api/auth/logout - Logout user');
+console.log('• POST /api/auth/logout - Logout user');
+
