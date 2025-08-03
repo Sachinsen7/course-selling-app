@@ -229,9 +229,13 @@ export const getQuizAttempts = async (quizId) => {
 // Instructor Quiz Management
 export const createQuiz = async (quizData) => {
   try {
+    console.log(' API: Making createQuiz request to /instructor/quiz with data:', quizData);
     const response = await api.post('/instructor/quiz', quizData);
+    console.log('API: createQuiz response:', response.data);
     return response.data;
   } catch (error) {
+    console.error('API: createQuiz error:', error);
+    console.error('API: createQuiz error response:', error.response?.data);
     throw handleApiError(error, "Failed to create quiz.");
   }
 };
