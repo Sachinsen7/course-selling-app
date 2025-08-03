@@ -220,9 +220,55 @@ export const submitQuizAnswers = async (quizId, answers) => {
 export const getQuizAttempts = async (quizId) => {
   try {
     const response = await api.get(`/enrollment/quiz/${quizId}/attempts`);
-    return response.data;  
-  } catch {
+    return response.data;
+  } catch (error) {
     throw handleApiError(error, "Failed to fetch quiz attempts.");
+  }
+};
+
+// Instructor Quiz Management
+export const createQuiz = async (quizData) => {
+  try {
+    const response = await api.post('/instructor/quiz', quizData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to create quiz.");
+  }
+};
+
+export const createQuestion = async (questionData) => {
+  try {
+    const response = await api.post('/instructor/question', questionData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to create question.");
+  }
+};
+
+export const getQuizForInstructor = async (quizId) => {
+  try {
+    const response = await api.get(`/instructor/quiz/${quizId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to fetch quiz for instructor.");
+  }
+};
+
+export const updateQuiz = async (quizId, quizData) => {
+  try {
+    const response = await api.put(`/instructor/quiz/${quizId}`, quizData);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to update quiz.");
+  }
+};
+
+export const deleteQuiz = async (quizId) => {
+  try {
+    const response = await api.delete(`/instructor/quiz/${quizId}`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error, "Failed to delete quiz.");
   }
 };
 
