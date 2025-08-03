@@ -25,6 +25,19 @@ const PurchaseSchema = new Schema(
     transactionId: {
       type: String,
     },
+    paymentStatus: {
+      type: String,
+      enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'],
+      default: 'COMPLETED'
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['PHONEPE', 'MOCK', 'FREE'],
+      default: 'MOCK'
+    },
+    paymentResponse: {
+      type: mongoose.Schema.Types.Mixed, // Store payment gateway response
+    },
   },
   {
     timestamps: true,
