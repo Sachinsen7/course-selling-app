@@ -104,7 +104,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
 
   const handleSaveQuestion = useCallback((e) => {
     if (e) e.stopPropagation();
-    // Validation
     if (!currentQuestion.text.trim()) {
       showModal({
         isOpen: true,
@@ -173,7 +172,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
       });
     }
 
-    // Reset form and close modal
+
     setCurrentQuestion({
       text: '',
       type: 'multiple-choice',
@@ -192,6 +191,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
   }, []);
 
   const handleCreateQuiz = useCallback(async (e) => {
+    console.log('🚀 handleCreateQuiz called!', { submitting, questionsLength: questions.length, quizData });
     if (e) e.stopPropagation();
     if (!quizData.title.trim()) {
       showModal({
@@ -215,7 +215,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
 
     setSubmitting(true);
     try {
-      // Create the quiz first
       const quizPayload = {
         lectureId,
         title: quizData.title,
@@ -224,13 +223,15 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         isPublished: quizData.isPublished
       };
 
+      console.log('Creating quiz with payload:', quizPayload);
       const quizResponse = await createQuiz(quizPayload);
       const quizId = quizResponse.quiz._id;
+      console.log('Quiz created successfully:', { quizId, quizResponse });
       setCreatedQuizId(quizId);
 
       console.log('Quiz created successfully:', { quizId, lectureId, quizResponse });
 
-      // Create questions for the quiz
+
       for (let i = 0; i < questions.length; i++) {
         const question = questions[i];
         const questionPayload = {
@@ -246,13 +247,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         await createQuestion(questionPayload);
       }
 
-      // Update the lecture to link it with the created quiz
       try {
-        await updateLecture(lectureId, { quizId });
-        console.log('Lecture updated with quiz ID:', { lectureId, quizId });
+        console.log('Attempting to update lecture with quiz ID:', { lectureId, quizId });
+        const updateResult = await updateLecture(lectureId, { quizId });
+        console.log('Lecture update successful:', updateResult);
       } catch (updateError) {
         console.error('Failed to update lecture with quiz ID:', updateError);
-        // Don't fail the entire process if lecture update fails
+        console.error('Update error details:', updateError.response?.data || updateError.message);
       }
 
       showModal({
@@ -276,7 +277,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     }
   }, [quizData, questions, lectureId, showModal, onQuizCreated]);
 
-  // Check if question form has unsaved changes
   const hasUnsavedChanges = useCallback(() => {
     if (editingQuestionIndex >= 0) {
       const originalQuestion = questions[editingQuestionIndex];
@@ -296,24 +296,21 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     }
   }, [currentQuestion, questions, editingQuestionIndex]);
 
-  // Memoized close handler for question form - only close on explicit user action
   const handleQuestionFormClose = useCallback((e) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
     }
 
-    // Check for unsaved changes and confirm before closing
     if (hasUnsavedChanges()) {
       const confirmClose = window.confirm(
         'You have unsaved changes. Are you sure you want to close without saving?'
       );
       if (!confirmClose) {
-        return; // Don't close if user cancels
+        return; 
       }
     }
 
-    // Reset form state when closing
     setCurrentQuestion({
       text: '',
       type: 'multiple-choice',
@@ -326,6 +323,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     setShowQuestionForm(false);
   }, [hasUnsavedChanges]);
 
+  console.log('QuizCreator render state:', {
+    quizDataTitle: quizData.title,
+    questionsCount: questions.length,
+    submitting,
+    buttonDisabled: submitting || questions.length === 0
+  });
+
   return (
     <div
       className="bg-[#FFFFFF] p-6 rounded-xl border border-[#E5E7EB] shadow-sm"
@@ -333,7 +337,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     >
       <h3 className="text-2xl font-bold text-[#1B3C53] mb-6">Create Quiz</h3>
       
-      {/* Quiz Basic Info */}
+
       <div className="space-y-4 mb-6">
         <div>
           <label htmlFor="quizTitle" className="block text-[#1B3C53] text-sm font-semibold mb-2">
@@ -420,7 +424,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         </div>
       </div>
 
-      {/* Questions Section */}
+
       <div className="border-t border-[#E5E7EB] pt-6">
         <div className="flex justify-between items-center mb-4">
           <h4 className="text-lg font-semibold text-[#1B3C53]">Questions ({questions.length})</h4>
@@ -481,21 +485,24 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         )}
       </div>
 
-      {/* Create Quiz Button */}
+
       <div className="border-t border-[#E5E7EB] pt-6 mt-6">
         <Button
           text={submitting ? 'Creating Quiz...' : 'Create Quiz'}
-          onClick={(e) => handleCreateQuiz(e)}
+          onClick={(e) => {
+            console.log('🔘 Create Quiz button clicked!', { disabled: submitting || questions.length === 0, submitting, questionsLength: questions.length });
+            handleCreateQuiz(e);
+          }}
           className="w-full px-6 py-3 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
           disabled={submitting || questions.length === 0}
         />
       </div>
 
-      {/* Question Form Modal */}
+
       <Modal
         key="question-form-modal"
         isOpen={showQuestionForm}
-        onClose={() => {}} // Disable backdrop close - only allow explicit close
+        onClose={() => {}} 
         title={editingQuestionIndex >= 0 ? 'Edit Question' : 'Add New Question'}
         type="info"
         zIndex={1100}
@@ -600,7 +607,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
             </div>
           </div>
 
-          {/* Multiple Choice Options */}
+
           {currentQuestion.type === 'multiple-choice' && (
             <div>
               <div className="flex justify-between items-center mb-3">
