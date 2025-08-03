@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     title: '',
     message: '',
     type: 'info',
-    onClose: () => setModal(prev => ({ ...prev, isOpen: false }))
+    onClose: null
   });
 
   
@@ -197,11 +197,14 @@ export const AuthProvider = ({ children }) => {
 
   
   const showModal = useCallback((newModalProps) => {
-    setModal(prev => ({
-      ...prev,
+    setModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'info',
       ...newModalProps,
-      onClose: newModalProps.onClose || (() => setModal(prev => ({ ...prev, isOpen: false })))
-    }));
+      onClose: () => setModal(prev => ({ ...prev, isOpen: false }))
+    });
   }, []);
 
   // Function to update user data in context
