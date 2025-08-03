@@ -211,17 +211,32 @@ export const AuthProvider = ({ children }) => {
     }));
   }, []);
 
+  // OAuth login function (for use by AuthSuccess component)
+  const oauthLogin = useCallback((userData, authToken) => {
+    localStorage.setItem('token', authToken);
+    setToken(authToken);
+    setUser(userData);
+    setModal({
+      isOpen: true,
+      title: 'Welcome!',
+      message: `Successfully signed in with Google!`,
+      type: 'success',
+      onClose: () => setModal(prev => ({ ...prev, isOpen: false })),
+    });
+  }, []);
+
   const contextValue = React.useMemo(() => ({
     token,
     user,
     isAuthenticated: !!token && !!user,
     loading,
     login,
+    oauthLogin,
     signup,
     logout,
     showModal,
     updateUser
-  }), [token, user, loading, login, signup, logout, showModal, updateUser]);
+  }), [token, user, loading, login, oauthLogin, signup, logout, showModal, updateUser]);
 
   return (
     <AuthContext.Provider value={contextValue}>
