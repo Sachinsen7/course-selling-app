@@ -200,6 +200,7 @@ export const AuthProvider = ({ children }) => {
     setModal(prev => ({
       ...prev,
       ...newModalProps,
+      onClose: newModalProps.onClose || (() => setModal(prev => ({ ...prev, isOpen: false })))
     }));
   }, []);
 
