@@ -25,6 +25,7 @@ import SearchBar from './components/user/SearchBar';
 import InstructorCourseFormPage from './pages/InstructorCourseFormPage';
 import InstructorCourseContentPage from './pages/InstructorCourseContentPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AuthSuccess from './pages/AuthSuccess';
 
 const PrivateRoutes = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, user, loading } = useAuth();
@@ -66,6 +67,7 @@ function App() {
           <Route path={AUTH_ROUTES.login} element={<Login />} />
           <Route path={AUTH_ROUTES.signup} element={<Signup />} />
           <Route path={AUTH_ROUTES.ForgotPassword} element={<ForgotPassword />} />
+          <Route path="/auth/success" element={<AuthSuccess />} />
 
           {/* Protected Routes */}
           <Route
