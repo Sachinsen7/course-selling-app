@@ -3,6 +3,7 @@ const { UserModel } = require("../db/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const z = require("zod");
+const passport = require('passport');
 const authRouter = Router();
 
 const userSignupSchema = z.object({
@@ -62,7 +63,7 @@ authRouter.post("/signup", async (req, res) => {
     const token = jwt.sign(
       { id: newUser._id, role: newUser.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" } // Token expires in 1 hour
+      { expiresIn: "1h" } 
     );
 
     res.status(201).json({
@@ -128,6 +129,75 @@ authRouter.post("/signin", async (req, res) => {
       message: "An error occurred during signin",
     });
   }
+});
+
+// Google OAuth routes
+authRouter.get('/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+authRouter.get('/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login?error=oauth_failed' }),
+    async (req, res) => {
+        try {
+            // Generate JWT token for the authenticated user
+            const token = jwt.sign(
+                {
+                    id: req.user._id,
+                    email: req.user.email,
+                    role: req.user.role
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            // Set token in httpOnly cookie for security
+            res.cookie('auth_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+
+            // Redirect to frontend with success
+            const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
+            res.redirect(`${frontendURL}/auth/success?token=${token}`);
+
+        } catch (error) {
+            console.error('OAuth callback error:', error);
+            res.redirect('/login?error=auth_failed');
+        }
+    }
+);
+
+// Get current user info (for frontend to check auth status)
+authRouter.get('/me', passport.authenticate('jwt', { session: false }), (req, res) => {
+    res.json({
+        success: true,
+        user: {
+            id: req.user._id,
+            email: req.user.email,
+            firstName: req.user.firstName,
+            lastName: req.user.lastName,
+            role: req.user.role,
+            profilePicture: req.user.profilePicture,
+            isEmailVerified: req.user.isEmailVerified
+        }
+    });
+});
+
+// Logout route
+authRouter.post('/logout', (req, res) => {
+    // Clear the auth cookie
+    res.clearCookie('auth_token');
+
+    // If using sessions, logout from session too
+    req.logout((err) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Logout failed' });
+        }
+        res.json({ success: true, message: 'Logged out successfully' });
+    });
 });
 
 module.exports = authRouter;
