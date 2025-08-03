@@ -707,8 +707,22 @@ function InstructorCourseContentPage() {
                                 {!lecture.isPublished && (
                                   <span className="ml-2 text-xs text-[#D97706] font-medium">[Draft]</span>
                                 )}
+                                {lecture.type === 'quiz' && lecture.quizId && (
+                                  <span className="ml-2 text-xs text-[#059669] font-medium bg-[#D1FAE5] px-2 py-1 rounded">[Quiz Created]</span>
+                                )}
+                                {lecture.type === 'quiz' && !lecture.quizId && (
+                                  <span className="ml-2 text-xs text-[#DC2626] font-medium bg-[#FEE2E2] px-2 py-1 rounded">[No Quiz]</span>
+                                )}
                               </span>
                               <div className="flex space-x-2">
+                                {lecture.type === 'quiz' && !lecture.quizId && (
+                                  <Button
+                                    text="Create Quiz"
+                                    onClick={() => handleCreateQuizForLecture(lecture._id)}
+                                    className="px-3 py-1 bg-[#059669] text-[#FFFFFF] hover:bg-[#047857] rounded-md text-xs font-medium transition-all duration-200"
+                                    aria-label={`Create quiz for ${lecture.title}`}
+                                  />
+                                )}
                                 <Button
                                   text="Edit"
                                   onClick={() => handleEditLectureClick(lecture)}
