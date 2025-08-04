@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import { useDispatch } from 'react-redux';
+import { showModal } from '../Redux/slices/uiSlice';
 import Button from '../components/common/Button';
 
 function HelpSupportPage() {
-  const { showModal } = useAuth();
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('faq');
   const [openFaq, setOpenFaq] = useState(null);
   const [contactForm, setContactForm] = useState({
