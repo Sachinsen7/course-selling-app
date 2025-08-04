@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectIsAuthenticated } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import { getWishlist, addToWishlist, removeFromWishlist, checkWishlistStatus } from '../services/api';
 
 export const useWishlist = () => {
-  const { isAuthenticated, showModal } = useAuth();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [wishlist, setWishlist] = useState([]);
   const [wishlistIds, setWishlistIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -35,12 +38,11 @@ export const useWishlist = () => {
   // Add course to wishlist
   const addCourseToWishlist = useCallback(async (courseId, courseTitle = 'Course') => {
     if (!isAuthenticated) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Login Required',
         message: 'Please log in to add courses to your wishlist.',
         type: 'info',
-      });
+      }));
       return false;
     }
 
@@ -51,23 +53,21 @@ export const useWishlist = () => {
       // Refresh wishlist to get full course data
       fetchWishlist();
       
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Added to Wishlist',
         message: `"${courseTitle}" has been added to your wishlist.`,
         type: 'success',
-      });
+      }));
       return true;
     } catch (err) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Error',
         message: err.message || 'Failed to add course to wishlist',
         type: 'error',
-      });
+      }));
       return false;
     }
-  }, [isAuthenticated, showModal, fetchWishlist]);
+  }, [isAuthenticated, dispatch, fetchWishlist]);
 
   // Remove course from wishlist
   const removeCourseFromWishlist = useCallback(async (courseId, courseTitle = 'Course') => {
@@ -84,23 +84,21 @@ export const useWishlist = () => {
       });
       setWishlist(prev => prev.filter(course => course._id !== courseId));
       
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Removed from Wishlist',
         message: `"${courseTitle}" has been removed from your wishlist.`,
         type: 'success',
-      });
+      }));
       return true;
     } catch (err) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Error',
         message: err.message || 'Failed to remove course from wishlist',
         type: 'error',
-      });
+      }));
       return false;
     }
-  }, [isAuthenticated, showModal]);
+  }, [isAuthenticated, dispatch]);
 
   // Toggle course in wishlist
   const toggleWishlist = useCallback(async (courseId, courseTitle = 'Course') => {
