@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectAuthLoading, selectToken, updateUser } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import Button from '../components/common/Button';
 import { updateUserProfile, changePassword } from '../services/api';
 
 function UserProfile() {
-  const { user, loading: authLoading, showModal, token, updateUser } = useAuth();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const authLoading = useSelector(selectAuthLoading);
+  const token = useSelector(selectToken);
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
