@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectAuthLoading } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import {
   getInstructorCourses,
   createSection,
@@ -29,9 +31,12 @@ const withTimeout = (promise, ms = 10000) =>
   ]);
 
 function InstructorCourseContentPage() {
-  const { id: courseId } = useParams(); 
-  const navigate = useNavigate(); 
-  const { user, loading: authLoading, showModal, token } = useAuth();
+  const { id: courseId } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const authLoading = useSelector(selectAuthLoading);
+  const token = localStorage.getItem('token');
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true); 
@@ -117,25 +122,23 @@ function InstructorCourseContentPage() {
     } catch (err) {
       console.error('Error fetching course content:', err, { response: err.response?.data });
       setError(err.response?.status === 404 ? 'Course not found.' : err.message || 'Failed to load course content.');
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Error',
         message: err.response?.status === 404 ? 'Course not found.' : err.message || 'Failed to load course content.',
         type: 'error',
-      });
+      }));
     } finally {
       setLoading(false);
     }
-  }, [courseId, showModal]);
+  }, [courseId, dispatch]);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'instructor')) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Access Denied',
         message: 'You must be an instructor to manage course content.',
         type: 'error',
-      });
+      }));
       navigate('/dashboard', { replace: true });
       return;
     }
@@ -1274,8 +1277,6 @@ function InstructorCourseContentPage() {
                 lectureId={currentQuizLecture}
                 courseId={courseId}
                 onQuizCreated={handleQuizCreated}
-                showModal={showModal}
-                token={token}
               />
             </>
           ) : (
