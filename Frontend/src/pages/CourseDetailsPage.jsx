@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCourseById, getEnrolledCourseDetails, enrollInCourse, addReview, getReviews, getCourses } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectIsAuthenticated, selectUser } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
 import WishlistButton from '../components/common/WishlistButton';
@@ -14,7 +16,9 @@ import { PROTECTED_ROUTES } from '../routes';
 function CourseDetailsPage() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user, showModal } = useAuth();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
 
   console.log('CourseDetailsPage - courseId from URL:', courseId);
 
