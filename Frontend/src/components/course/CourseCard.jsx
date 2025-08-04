@@ -5,11 +5,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../common/Button';
 import WishlistButton from '../common/WishlistButton';
 import AddToCartButton from '../common/AddToCartButton';
-import { useAuth } from '../../context/AuthContext';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated } from '../../Redux/slices/authSlice';
 import { PUBLIC_ROUTES, PROTECTED_ROUTES } from '../../routes';
 
 function CourseCard({ course, className }) {
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const navigate = useNavigate();
 
   if (!course) {

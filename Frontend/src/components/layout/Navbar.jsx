@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser, selectIsAuthenticated, logout } from "../../Redux/slices/authSlice";
+import { selectCartCount } from "../../Redux/slices/cartSlice";
 import { useWishlist } from "../../hooks/useWishlist";
-import { useCart } from "../../hooks/useCart";
 import Button from "../common/Button";
+import ThemeToggle from "../common/ThemeToggle";
 import { AUTH_ROUTES, PROTECTED_ROUTES, PUBLIC_ROUTES } from "../../routes";
 
 function Navbar() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const cartCount = useSelector(selectCartCount);
   const { wishlistCount } = useWishlist();
-  const { cartCount } = useCart();
   const location = useLocation();
 
   // Debug user data changes
@@ -207,6 +211,11 @@ function Navbar() {
                 </button>
               </motion.div>
             )}
+
+            {/* Theme Toggle */}
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <ThemeToggle size="md" className="ml-2" />
+            </motion.div>
           </div>
 
           {/* User Menu */}
@@ -321,7 +330,7 @@ function Navbar() {
                     <div className="border-t border-gray-100 pt-2">
                       <button
                         onClick={() => {
-                          logout();
+                          dispatch(logout());
                           setIsDropdownOpen(false);
                         }}
                         className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-150"
@@ -392,6 +401,12 @@ function Navbar() {
                   </Link>
                 ))}
 
+                {/* Theme Toggle for Mobile */}
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-gray-700 font-medium">Theme</span>
+                  <ThemeToggle size="sm" />
+                </div>
+
                 {/* Mobile User Section */}
                 {isAuthenticated ? (
                   <div className="border-t border-gray-100 pt-4 mt-4">
@@ -447,7 +462,7 @@ function Navbar() {
                       </Link>
                       <button
                         onClick={() => {
-                          logout();
+                          dispatch(logout());
                           setIsMobileMenuOpen(false);
                         }}
                         className="flex items-center w-full px-3 py-2 rounded-md text-red-600 hover:bg-red-50"
