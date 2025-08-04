@@ -2,11 +2,10 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const QuizSchema = new Schema({
-    lectureId: { 
+    lectureId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Lecture',
-        required: true,
-        unique: true
+        required: true
     },
     courseId: { 
         type: mongoose.Schema.Types.ObjectId,

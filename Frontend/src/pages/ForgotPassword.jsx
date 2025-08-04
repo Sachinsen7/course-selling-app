@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
-import { useAuth } from '../context/AuthContext';
+import { useDispatch } from 'react-redux';
+import { showModal } from '../Redux/slices/uiSlice';
 import { AUTH_ROUTES } from '../routes';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const { showModal } = useAuth();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,12 +26,11 @@ function ForgotPassword() {
       
       // Simulate success/failure based on email (for demo purposes)
       if (email.includes('@')) { 
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: "Password Reset Link Sent!",
           message: `If an account exists for ${email}, a password reset link has been sent to your inbox.`,
           type: "success",
-        });
+        }));
         setEmail(''); 
       } else {
         throw new Error("Please enter a valid email address.");
@@ -38,12 +38,11 @@ function ForgotPassword() {
       
     } catch (err) {
       setError(err.message || "Failed to send password reset link. Please try again.");
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: "Request Failed",
         message: err.message || "Could not send password reset link.",
         type: "error",
-      });
+      }));
     } finally {
       setSubmitting(false);
     }

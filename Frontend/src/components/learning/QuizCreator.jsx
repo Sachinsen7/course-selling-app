@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { createQuiz, createQuestion, getQuizForInstructor, updateLecture } from '../../services/api';
+import { useDispatch } from 'react-redux';
+import { showModal } from '../../Redux/slices/uiSlice';
+import { createQuiz, createQuestion, getQuizForInstructor, updateLecture, updateQuiz, deleteQuiz } from '../../services/api';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 
-function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
+function QuizCreator({ lectureId, courseId, onQuizCreated }) {
+  const dispatch = useDispatch();
   const [quizData, setQuizData] = useState({
     title: '',
     description: '',
@@ -26,6 +29,55 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
   const [editingQuestionIndex, setEditingQuestionIndex] = useState(-1);
   const [submitting, setSubmitting] = useState(false);
   const [createdQuizId, setCreatedQuizId] = useState(null);
+  const [existingQuiz, setExistingQuiz] = useState(null);
+  const [checkingExistingQuiz, setCheckingExistingQuiz] = useState(false);
+
+  // Check if quiz already exists for this lecture
+  const checkExistingQuiz = useCallback(async () => {
+    if (!lectureId) return;
+
+    setCheckingExistingQuiz(true);
+    try {
+      const response = await getQuizForInstructor(lectureId);
+      if (response && response.quiz) {
+        setExistingQuiz(response.quiz);
+        dispatch(showModal({
+          title: 'Quiz Already Exists',
+          message: `This lecture already has a quiz titled "${response.quiz.title}". You can edit the existing quiz instead of creating a new one.`,
+          type: 'info'
+        }));
+      }
+    } catch (error) {
+      // If 404, no quiz exists - this is fine
+      if (error.response?.status !== 404) {
+        console.error('Error checking existing quiz:', error);
+      }
+    } finally {
+      setCheckingExistingQuiz(false);
+    }
+  }, [lectureId, dispatch]);
+
+  // Delete existing quiz and allow creating a new one
+  const handleDeleteExistingQuiz = useCallback(async () => {
+    if (!existingQuiz) return;
+
+    try {
+      await deleteQuiz(existingQuiz._id);
+      setExistingQuiz(null);
+      dispatch(showModal({
+        title: 'Quiz Deleted',
+        message: 'The existing quiz has been deleted. You can now create a new quiz.',
+        type: 'success'
+      }));
+    } catch (error) {
+      console.error('Error deleting quiz:', error);
+      dispatch(showModal({
+        title: 'Deletion Failed',
+        message: error.message || 'Failed to delete the existing quiz.',
+        type: 'error'
+      }));
+    }
+  }, [existingQuiz, dispatch]);
 
   const questionTypes = [
     { value: 'multiple-choice', label: 'Multiple Choice' },
@@ -47,10 +99,42 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
   const handleQuestionChange = useCallback((e) => {
     e.stopPropagation();
     const { name, value } = e.target;
-    setCurrentQuestion(prev => ({
-      ...prev,
-      [name]: name === 'points' ? Number(value) || 1 : value
-    }));
+
+    if (name === 'type') {
+      // Reset question structure based on type
+      if (value === 'multiple-choice') {
+        setCurrentQuestion(prev => ({
+          ...prev,
+          type: value,
+          options: [{ text: '', isCorrect: false }, { text: '', isCorrect: false }],
+          correctAnswer: ''
+        }));
+      } else if (value === 'short-answer') {
+        setCurrentQuestion(prev => ({
+          ...prev,
+          type: value,
+          options: [],
+          correctAnswer: ''
+        }));
+      } else if (value === 'true-false') {
+        setCurrentQuestion(prev => ({
+          ...prev,
+          type: value,
+          options: [],
+          correctAnswer: ''
+        }));
+      }
+    } else if (name === 'trueFalseAnswer') {
+      setCurrentQuestion(prev => ({
+        ...prev,
+        correctAnswer: value
+      }));
+    } else {
+      setCurrentQuestion(prev => ({
+        ...prev,
+        [name]: name === 'points' ? Number(value) || 1 : value
+      }));
+    }
   }, []);
 
   const handleOptionChange = useCallback((index, field, value, event = null) => {
@@ -104,76 +188,118 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
 
   const handleSaveQuestion = useCallback((e) => {
     if (e) e.stopPropagation();
-    // Validation
+
     if (!currentQuestion.text.trim()) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Validation Error',
         message: 'Question text is required.',
         type: 'error'
-      });
+      }));
+      return;
+    }
+
+    if (currentQuestion.text.trim().length < 5) {
+      dispatch(showModal({
+        title: 'Validation Error',
+        message: 'Question text must be at least 5 characters long.',
+        type: 'error'
+      }));
       return;
     }
 
     if (currentQuestion.type === 'multiple-choice') {
       const validOptions = currentQuestion.options.filter(opt => opt.text.trim());
+
       if (validOptions.length < 2) {
-        showModal({
-          isOpen: true,
+
+        dispatch(showModal({
           title: 'Validation Error',
           message: 'Multiple choice questions need at least 2 options.',
           type: 'error'
-        });
+        }));
         return;
       }
-      
+
+      // Check if all options meet minimum length requirement
+      const shortOptions = validOptions.filter(opt => opt.text.trim().length < 2);
+      if (shortOptions.length > 0) {
+
+        dispatch(showModal({
+          title: 'Validation Error',
+          message: 'Each option must be at least 2 characters long.',
+          type: 'error'
+        }));
+        return;
+      }
+
       const correctOptions = validOptions.filter(opt => opt.isCorrect);
+
       if (correctOptions.length === 0) {
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: 'Validation Error',
           message: 'Please mark at least one correct answer.',
           type: 'error'
-        });
+        }));
+        return;
+      }
+
+
+    }
+
+    if (currentQuestion.type === 'true-false') {
+      if (!currentQuestion.correctAnswer || (currentQuestion.correctAnswer !== 'true' && currentQuestion.correctAnswer !== 'false')) {
+        dispatch(showModal({
+          title: 'Validation Error',
+          message: 'Please select the correct answer (True or False).',
+          type: 'error'
+        }));
         return;
       }
     }
 
-    if (currentQuestion.type === 'short-answer' && !currentQuestion.correctAnswer.trim()) {
-      showModal({
-        isOpen: true,
-        title: 'Validation Error',
-        message: 'Please provide the correct answer for short answer questions.',
-        type: 'error'
-      });
-      return;
+    if (currentQuestion.type === 'short-answer') {
+      if (!currentQuestion.correctAnswer.trim()) {
+        dispatch(showModal({
+          title: 'Validation Error',
+          message: 'Please provide the correct answer for short answer questions.',
+          type: 'error'
+        }));
+        return;
+      }
+
+      if (currentQuestion.correctAnswer.trim().length < 1) {
+        dispatch(showModal({
+          title: 'Validation Error',
+          message: 'The correct answer must be at least 1 character long.',
+          type: 'error'
+        }));
+        return;
+      }
     }
 
     const questionToSave = {
       ...currentQuestion,
-      options: currentQuestion.type === 'multiple-choice' ? 
+      options: currentQuestion.type === 'multiple-choice' ?
         currentQuestion.options.filter(opt => opt.text.trim()) : []
     };
 
     if (editingQuestionIndex >= 0) {
       setQuestions(prev => prev.map((q, i) => i === editingQuestionIndex ? questionToSave : q));
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Question Updated',
         message: 'Question has been successfully updated!',
         type: 'success'
-      });
+      }));
     } else {
       setQuestions(prev => [...prev, questionToSave]);
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Question Added',
         message: 'Question has been successfully added to the quiz!',
         type: 'success'
-      });
+      }));
     }
 
-    // Reset form and close modal
+
     setCurrentQuestion({
       text: '',
       type: 'multiple-choice',
@@ -192,30 +318,43 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
   }, []);
 
   const handleCreateQuiz = useCallback(async (e) => {
+    console.log('🚀 handleCreateQuiz called!', {
+      submitting,
+      questionsLength: questions.length,
+      quizData,
+      lectureId,
+      existingQuiz
+    });
     if (e) e.stopPropagation();
     if (!quizData.title.trim()) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Validation Error',
         message: 'Quiz title is required.',
         type: 'error'
-      });
+      }));
+      return;
+    }
+
+    if (quizData.title.trim().length < 3) {
+      dispatch(showModal({
+        title: 'Validation Error',
+        message: 'Quiz title must be at least 3 characters long.',
+        type: 'error'
+      }));
       return;
     }
 
     if (questions.length === 0) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Validation Error',
         message: 'Please add at least one question to the quiz.',
         type: 'error'
-      });
+      }));
       return;
     }
 
     setSubmitting(true);
     try {
-      // Create the quiz first
       const quizPayload = {
         lectureId,
         title: quizData.title,
@@ -224,13 +363,16 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         isPublished: quizData.isPublished
       };
 
+      console.log('🚀 Creating quiz with payload:', quizPayload);
+      console.log('📋 Questions to create:', questions);
       const quizResponse = await createQuiz(quizPayload);
       const quizId = quizResponse.quiz._id;
+      console.log('Quiz created successfully:', { quizId, quizResponse });
       setCreatedQuizId(quizId);
 
       console.log('Quiz created successfully:', { quizId, lectureId, quizResponse });
 
-      // Create questions for the quiz
+
       for (let i = 0; i < questions.length; i++) {
         const question = questions[i];
         const questionPayload = {
@@ -246,37 +388,49 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         await createQuestion(questionPayload);
       }
 
-      // Update the lecture to link it with the created quiz
       try {
-        await updateLecture(lectureId, { quizId });
-        console.log('Lecture updated with quiz ID:', { lectureId, quizId });
+        console.log('Attempting to update lecture with quiz ID:', { lectureId, quizId });
+        const updateResult = await updateLecture(lectureId, { quizId });
+        console.log('Lecture update successful:', updateResult);
       } catch (updateError) {
         console.error('Failed to update lecture with quiz ID:', updateError);
-        // Don't fail the entire process if lecture update fails
+        console.error('Update error details:', updateError.response?.data || updateError.message);
       }
 
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Quiz Created',
         message: 'Quiz and questions created successfully!',
         type: 'success'
-      });
+      }));
 
       onQuizCreated(quizId);
     } catch (error) {
       console.error('Error creating quiz:', error);
-      showModal({
-        isOpen: true,
-        title: 'Creation Failed',
-        message: error.message || 'Failed to create quiz.',
+
+      let errorMessage = 'Failed to create quiz.';
+      let errorTitle = 'Creation Failed';
+
+      if (error.response?.status === 409) {
+        errorTitle = 'Quiz Already Exists';
+        errorMessage = 'This lecture already has a quiz associated with it. Please use the "Check Existing Quiz" button to see the existing quiz and choose to delete it if you want to create a new one.';
+        // Automatically check for existing quiz to show options
+        checkExistingQuiz();
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      dispatch(showModal({
+        title: errorTitle,
+        message: errorMessage,
         type: 'error'
-      });
+      }));
     } finally {
       setSubmitting(false);
     }
-  }, [quizData, questions, lectureId, showModal, onQuizCreated]);
+  }, [quizData, questions, lectureId, dispatch, onQuizCreated]);
 
-  // Check if question form has unsaved changes
   const hasUnsavedChanges = useCallback(() => {
     if (editingQuestionIndex >= 0) {
       const originalQuestion = questions[editingQuestionIndex];
@@ -296,24 +450,21 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     }
   }, [currentQuestion, questions, editingQuestionIndex]);
 
-  // Memoized close handler for question form - only close on explicit user action
   const handleQuestionFormClose = useCallback((e) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
     }
 
-    // Check for unsaved changes and confirm before closing
     if (hasUnsavedChanges()) {
       const confirmClose = window.confirm(
         'You have unsaved changes. Are you sure you want to close without saving?'
       );
       if (!confirmClose) {
-        return; // Don't close if user cancels
+        return; 
       }
     }
 
-    // Reset form state when closing
     setCurrentQuestion({
       text: '',
       type: 'multiple-choice',
@@ -326,14 +477,64 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
     setShowQuestionForm(false);
   }, [hasUnsavedChanges]);
 
+  console.log('QuizCreator render state:', {
+    quizDataTitle: quizData.title,
+    questionsCount: questions.length,
+    submitting,
+    buttonDisabled: submitting || questions.length === 0
+  });
+
   return (
     <div
       className="bg-[#FFFFFF] p-6 rounded-xl border border-[#E5E7EB] shadow-sm"
       onClick={(e) => e.stopPropagation()}
     >
-      <h3 className="text-2xl font-bold text-[#1B3C53] mb-6">Create Quiz</h3>
-      
-      {/* Quiz Basic Info */}
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-bold text-[#1B3C53]">Create Quiz</h3>
+        <Button
+          text={checkingExistingQuiz ? 'Checking...' : 'Check Existing Quiz'}
+          onClick={checkExistingQuiz}
+          className="px-4 py-2 bg-[#4A8292] text-white hover:bg-[#456882] rounded-md text-sm"
+          disabled={checkingExistingQuiz || !lectureId}
+        />
+      </div>
+
+      {existingQuiz && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Quiz Already Exists
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>This lecture already has a quiz titled "{existingQuiz.title}".</p>
+                <p className="mt-1">Choose an option below:</p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  text="Delete & Create New"
+                  onClick={handleDeleteExistingQuiz}
+                  className="px-3 py-1 bg-red-600 text-white hover:bg-red-700 rounded text-sm"
+                  disabled={submitting}
+                />
+                <Button
+                  text="Cancel"
+                  onClick={() => setExistingQuiz(null)}
+                  className="px-3 py-1 bg-gray-500 text-white hover:bg-gray-600 rounded text-sm"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       <div className="space-y-4 mb-6">
         <div>
           <label htmlFor="quizTitle" className="block text-[#1B3C53] text-sm font-semibold mb-2">
@@ -375,6 +576,29 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
             disabled={submitting}
             autoComplete="off"
           />
+        </div>
+
+        {/* Validation Requirements Info */}
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">Quiz Requirements</h3>
+              <div className="mt-2 text-sm text-blue-700">
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Quiz title must be at least 3 characters long</li>
+                  <li>Question text must be at least 5 characters long</li>
+                  <li>Multiple choice options must be at least 2 characters long</li>
+                  <li>At least one question is required</li>
+                  <li>Multiple choice questions need at least 2 options with one correct answer</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -420,7 +644,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         </div>
       </div>
 
-      {/* Questions Section */}
+
       <div className="border-t border-[#E5E7EB] pt-6">
         <div className="flex justify-between items-center mb-4">
           <h4 className="text-lg font-semibold text-[#1B3C53]">Questions ({questions.length})</h4>
@@ -481,21 +705,45 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
         )}
       </div>
 
-      {/* Create Quiz Button */}
+
       <div className="border-t border-[#E5E7EB] pt-6 mt-6">
-        <Button
-          text={submitting ? 'Creating Quiz...' : 'Create Quiz'}
-          onClick={(e) => handleCreateQuiz(e)}
-          className="w-full px-6 py-3 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
-          disabled={submitting || questions.length === 0}
-        />
+        {existingQuiz ? (
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-4">
+              A quiz already exists for this lecture. Please use the options above to manage the existing quiz.
+            </p>
+            <Button
+              text="Check Existing Quiz Again"
+              onClick={checkExistingQuiz}
+              className="px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-md"
+              disabled={checkingExistingQuiz}
+            />
+          </div>
+        ) : (
+          <Button
+            text={submitting ? 'Creating Quiz...' : 'Create Quiz'}
+            onClick={(e) => {
+              console.log('🔘 Create Quiz button clicked!', {
+                disabled: submitting || questions.length === 0,
+                submitting,
+                questionsLength: questions.length,
+                quizData,
+                lectureId,
+                existingQuiz
+              });
+              handleCreateQuiz(e);
+            }}
+            className="w-full px-6 py-3 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
+            disabled={submitting || questions.length === 0}
+          />
+        )}
       </div>
 
-      {/* Question Form Modal */}
+
       <Modal
         key="question-form-modal"
         isOpen={showQuestionForm}
-        onClose={() => {}} // Disable backdrop close - only allow explicit close
+        onClose={() => {}} 
         title={editingQuestionIndex >= 0 ? 'Edit Question' : 'Add New Question'}
         type="info"
         zIndex={1100}
@@ -600,7 +848,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
             </div>
           </div>
 
-          {/* Multiple Choice Options */}
+
           {currentQuestion.type === 'multiple-choice' && (
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -652,12 +900,42 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
             </div>
           )}
 
-          {/* True/False - no additional options needed */}
+          {/* True/False */}
           {currentQuestion.type === 'true-false' && (
-            <div className="bg-[#F9FAFB] p-3 rounded-md">
-              <p className="text-sm text-[#6B7280]">
-                Students will see True/False options automatically. The correct answer will be determined by their selection.
-              </p>
+            <div>
+              <label className="block text-[#1B3C53] text-sm font-semibold mb-2">
+                Correct Answer
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="trueFalseAnswer"
+                    value="true"
+                    checked={currentQuestion.correctAnswer === 'true'}
+                    onChange={(e) => handleQuestionChange(e)}
+                    onFocus={(e) => e.stopPropagation()}
+                    onBlur={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mr-2 accent-[#4A8292]"
+                  />
+                  <span className="text-[#1B3C53]">True</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="trueFalseAnswer"
+                    value="false"
+                    checked={currentQuestion.correctAnswer === 'false'}
+                    onChange={(e) => handleQuestionChange(e)}
+                    onFocus={(e) => e.stopPropagation()}
+                    onBlur={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mr-2 accent-[#4A8292]"
+                  />
+                  <span className="text-[#1B3C53]">False</span>
+                </label>
+              </div>
             </div>
           )}
 
@@ -717,9 +995,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated, showModal, token }) {
 QuizCreator.propTypes = {
   lectureId: PropTypes.string.isRequired,
   courseId: PropTypes.string.isRequired,
-  onQuizCreated: PropTypes.func.isRequired,
-  showModal: PropTypes.func.isRequired,
-  token: PropTypes.string.isRequired
+  onQuizCreated: PropTypes.func.isRequired
 };
 
 export default QuizCreator;

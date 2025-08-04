@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import CourseCard from "../components/course/CourseCard";
-import SearchBar from "../components/user/SearchBar"; 
-import Loader from "../components/common/Loader"; 
+import SearchBar from "../components/user/SearchBar";
+import Loader from "../components/common/Loader";
 import { getCourses } from "../services/api";
 
 function Home() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); 
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -36,8 +36,8 @@ function Home() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <SearchBar /> 
-        <h1 className="text-3xl font-bold text-text-primary text-center mb-lg"> 
+        <SearchBar />
+        <h1 className="text-3xl font-bold text-text-primary text-center mb-lg">
           Welcome to LearnSphere
         </h1>
         {courses.length === 0 ? (

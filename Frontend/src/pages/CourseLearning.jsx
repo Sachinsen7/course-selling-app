@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectIsAuthenticated, selectAuthLoading } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import { getEnrolledCourseDetails, updateLectureProgress, getCourseProgress } from '../services/api';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
@@ -15,7 +17,10 @@ import ProgressTracker from '../components/learning/ProgressTracker';
 function CourseLearning() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, loading: authLoading, showModal } = useAuth();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const authLoading = useSelector(selectAuthLoading);
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -221,6 +226,20 @@ function CourseLearning() {
                 onQuizComplete={handleQuizAssignmentComplete}
                 showModal={showModal}
               />
+            )}
+
+            {selectedLecture.type === 'quiz' && !selectedLecture.quizId && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                <div className="text-yellow-600 mb-2">
+                  <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">Quiz Not Available</h3>
+                <p className="text-yellow-700">
+                  This quiz lecture is still being prepared by the instructor. Please check back later.
+                </p>
+              </div>
             )}
 
             {selectedLecture.type === 'assignment' && (

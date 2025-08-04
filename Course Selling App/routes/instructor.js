@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 
 const instructorRouter = Router();
 
-// Zod schema for creating a course
+
 const createCourseSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters long").max(100, "Title cannot exceed 100 characters").trim(),
     description: z.string().min(20, "Description must be at least 20 characters long").trim(),
@@ -16,7 +16,7 @@ const createCourseSchema = z.object({
     status: z.enum(['draft', 'published', 'archived']).default('draft')
 });
 
-// Zod schema for updating a course
+
 const updateCourseSchema = z.object({
     courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid course ID format"),
     title: z.string().min(5, "Title must be at least 5 characters long").max(100, "Title cannot exceed 100 characters").trim().optional(),
@@ -28,7 +28,7 @@ const updateCourseSchema = z.object({
     message: "At least one field (title, description, price, category, status) must be provided for update."
 });
 
-// Zod schema for creating a section
+
 
 const createSectionSchema = z.object({
   courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid course ID format'),
@@ -45,7 +45,7 @@ const updateSectionSchema = z.object({
 });
 
 
-// Zod schema for creating a lecture
+
 const createLectureSchema = z.object({
     sectionId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid section ID format"),
     title: z.string().min(3, "Lecture title must be at least 3 characters long").max(150, "Lecture title cannot exceed 150 characters").trim(),
@@ -70,7 +70,6 @@ const createLectureSchema = z.object({
     message: "Missing required fields based on lecture type."
 });
 
-// Zod schema for updating a lecture
 const updateLectureSchema = z.object({
     lectureId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid lecture ID format"),
     title: z.string().min(3, "Lecture title must be at least 3 characters long").max(150, "Lecture title cannot exceed 150 characters").trim().optional(),
@@ -79,12 +78,13 @@ const updateLectureSchema = z.object({
     textContent: z.string().min(10, "Text content must be at least 10 characters long").optional(),
     duration: z.number().int().min(0, "Duration must be a non-negative integer").optional(),
     order: z.number().int().min(0, "Order must be a non-negative integer").optional(),
-    isPublished: z.boolean().optional()
+    isPublished: z.boolean().optional(),
+    quizId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid quiz ID format").optional()
 }).refine(data => Object.keys(data).length > 1, {
     message: "At least one field must be provided for update."
 });
 
-// Zod schema for creating a quiz
+
 const createQuizSchema = z.object({
     lectureId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid lecture ID format"),
     title: z.string().min(3, "Quiz title must be at least 3 characters long").max(100, "Quiz title cannot exceed 100 characters").trim(),
@@ -93,7 +93,7 @@ const createQuizSchema = z.object({
     isPublished: z.boolean().default(false).optional()
 });
 
-// Zod schema for updating a quiz
+
 const updateQuizSchema = z.object({
     quizId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid quiz ID format"),
     title: z.string().min(3, "Quiz title must be at least 3 characters long").max(100, "Quiz title cannot exceed 100 characters").trim().optional(),
@@ -104,7 +104,7 @@ const updateQuizSchema = z.object({
     message: "At least one field must be provided for update."
 });
 
-// Zod schema for creating a question
+
 const createQuestionSchema = z.object({
     quizId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid quiz ID format"),
     text: z.string().min(5, "Question text must be at least 5 characters long").trim(),
@@ -346,6 +346,17 @@ instructorRouter.get("/my-courses", authMiddleware, async (req, res) => {
                 }
             })
             .sort({ createdAt: -1 });
+
+        courses.forEach(course => {
+            course.sections.forEach(section => {
+                section.lectures.forEach(lecture => {
+                    if (lecture.type === 'quiz') {
+                        console.log(`Quiz lecture "${lecture.title}" has quizId:`, lecture.quizId);
+                    }
+                });
+            });
+        });
+
         res.status(200).json({ message: "Courses fetched successfully", courses: courses });
     } catch (error) {
         console.error("Error fetching instructor's courses:", error);
@@ -402,7 +413,7 @@ instructorRouter.delete("/course/:courseId", authMiddleware, async (req, res) =>
     }
 });
 
-// Section Routes 
+
 
 instructorRouter.post('/section', authMiddleware, async (req, res) => {
   if (req.userRole !== 'instructor') {
@@ -566,7 +577,7 @@ instructorRouter.delete('/section/:sectionId', authMiddleware, async (req, res) 
 
 // Lecture Routes 
 
-// Route to upload video for a lecture
+
 instructorRouter.post("/upload-video", authMiddleware, uploadVideo, async (req, res) => {
     try {
         if (req.userRole !== 'instructor') {
@@ -592,7 +603,7 @@ instructorRouter.post("/upload-video", authMiddleware, uploadVideo, async (req, 
     }
 });
 
-// Route to create a new lecture for a section
+
 instructorRouter.post("/lecture", authMiddleware, async (req, res) => {
     if (req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied. Only instructors can create lectures." });
@@ -638,7 +649,7 @@ instructorRouter.post("/lecture", authMiddleware, async (req, res) => {
     }
 });
 
-// Route to get a specific lecture by ID
+
 instructorRouter.get("/lecture/:lectureId", authMiddleware, async (req, res) => {
     if (req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied. Only instructors can view individual lectures." });
@@ -670,7 +681,7 @@ instructorRouter.get("/lecture/:lectureId", authMiddleware, async (req, res) => 
 });
 
 
-// Route to update a lecture
+
 instructorRouter.put("/lecture/:lectureId", authMiddleware, async (req, res) => {
     if (req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied. Only instructors can update lectures." });
@@ -679,12 +690,16 @@ instructorRouter.put("/lecture/:lectureId", authMiddleware, async (req, res) => 
     const lectureId = req.params.lectureId;
     const instructorId = req.userId;
 
+    console.log('Lecture update request:', { lectureId, body: req.body });
+
     const validationResult = updateLectureSchema.safeParse({ ...req.body, lectureId });
     if (!validationResult.success) {
+        console.log('Validation failed:', validationResult.error.errors);
         return res.status(400).json({ message: "Invalid input data for lecture update", errors: validationResult.error.errors });
     }
 
     const updateData = validationResult.data;
+    console.log('Update data after validation:', updateData);
 
     try {
         const lecture = await LectureModel.findById(lectureId);
@@ -703,6 +718,7 @@ instructorRouter.put("/lecture/:lectureId", authMiddleware, async (req, res) => 
             { new: true, runValidators: true }
         );
 
+        console.log('Lecture updated successfully:', updatedLecture);
         res.status(200).json({ message: "Lecture updated successfully", lecture: updatedLecture });
     } catch (error) {
         console.error("Error updating lecture:", error);
@@ -758,21 +774,31 @@ instructorRouter.delete("/lecture/:lectureId", authMiddleware, async (req, res) 
 });
 
 
-// Quiz Routes 
+// Quiz Routes
 
-// Route to create a quiz for a specific lecture 
+// Test route to verify quiz endpoint is reachable
+instructorRouter.get("/quiz/test", (req, res) => {
+    console.log('🧪 Quiz test endpoint hit!');
+    res.json({ message: "Quiz endpoint is working!", timestamp: new Date() });
+});
+
+// Route to create a quiz for a specific lecture
 instructorRouter.post("/quiz", authMiddleware, async (req, res) => {
     if (req.userRole !== 'instructor') {
         return res.status(403).json({ message: "Access denied. Only instructors can create quizzes." });
     }
 
+    console.log('Quiz creation request:', req.body);
+
     const validationResult = createQuizSchema.safeParse(req.body);
     if (!validationResult.success) {
+        console.log('Quiz validation failed:', validationResult.error.errors);
         return res.status(400).json({ message: "Invalid input data for quiz creation", errors: validationResult.error.errors });
     }
 
     const { lectureId, title, description, passPercentage, isPublished } = validationResult.data;
     const instructorId = req.userId;
+    console.log('Quiz creation data:', { lectureId, title, description, passPercentage, isPublished, instructorId });
 
     try {
         const lecture = await LectureModel.findById(lectureId);
@@ -799,9 +825,14 @@ instructorRouter.post("/quiz", authMiddleware, async (req, res) => {
             passPercentage,
             isPublished
         });
+        console.log('Quiz created:', newQuiz._id);
 
-       
-        await LectureModel.findByIdAndUpdate(lectureId, { quizId: newQuiz._id });
+        const updatedLecture = await LectureModel.findByIdAndUpdate(
+            lectureId,
+            { quizId: newQuiz._id },
+            { new: true }
+        );
+        console.log('Lecture updated with quizId:', updatedLecture.quizId);
 
         res.status(201).json({ message: "Quiz created successfully", quiz: newQuiz });
     } catch (error) {

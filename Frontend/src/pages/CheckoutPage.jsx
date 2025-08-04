@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectIsAuthenticated, selectUser } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import { useCart } from '../hooks/useCart';
 import { getCourseById, processPayment } from '../services/api';
 import Loader from '../components/common/Loader';
@@ -10,7 +12,9 @@ import { PUBLIC_ROUTES, PROTECTED_ROUTES } from '../routes';
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user, showModal } = useAuth();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
   const { cartItems, getCartSummary, clearCart } = useCart();
   const location = useLocation();
 
@@ -41,12 +45,11 @@ function CheckoutPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: "Login Required",
         message: "You need to log in to proceed to checkout.",
         type: "info",
-      });
+      }));
       navigate('/login', { replace: true });
       return;
     }
@@ -113,12 +116,11 @@ function CheckoutPage() {
               });
             } catch (err) {
               setError(err.message || "Failed to load course details for checkout.");
-              showModal({
-                isOpen: true,
+              dispatch(showModal({
                 title: "Error",
                 message: err.message || "Failed to load course details for checkout.",
                 type: "error",
-              });
+              }));
             }
           }
         } else {
@@ -128,19 +130,18 @@ function CheckoutPage() {
       } catch (err) {
         console.error('Checkout initialization error:', err);
         setError(err.message || "Failed to load checkout details.");
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: "Error",
           message: err.message || "Failed to load checkout details.",
           type: "error",
-        });
+        }));
       } finally {
         setLoading(false);
       }
     };
 
     initializeCheckout();
-  }, [courseId, singleCourse, passedCartItems, passedCartSummary, cartItems, isAuthenticated, navigate, showModal, getCartSummary]);
+  }, [courseId, singleCourse, passedCartItems, passedCartSummary, cartItems, isAuthenticated, navigate, dispatch, getCartSummary]);
 
   const handlePayment = async () => {
     setSubmitting(true);
@@ -165,12 +166,11 @@ function CheckoutPage() {
         };
 
         await processPayment(course._id, paymentDetails);
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: "Payment Successful!",
           message: `You have successfully purchased "${course.title}".`,
           type: "success",
-        });
+        }));
       } else {
         // For multiple courses (cart purchase)
         // Note: This would need a different API endpoint for bulk purchases
@@ -190,12 +190,11 @@ function CheckoutPage() {
           });
         }
 
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: "Payment Successful!",
           message: `You have successfully purchased ${checkoutItems.length} courses.`,
           type: "success",
-        });
+        }));
 
         // Clear cart after successful purchase
         clearCart();
@@ -205,12 +204,11 @@ function CheckoutPage() {
     } catch (err) {
       console.error('Payment error:', err);
       setError(err.message || "Payment failed. Please try again.");
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: "Payment Failed",
         message: err.message || "Payment could not be processed.",
         type: "error",
-      });
+      }));
     } finally {
       setSubmitting(false);
     }

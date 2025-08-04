@@ -1,6 +1,8 @@
 import { Children, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated, selectUser, selectAuthLoading } from './Redux/slices/authSlice';
+import ReduxInitializer from './Redux/ReduxInitializer';
 import HomePage from './pages/HomePage';
 import { PUBLIC_ROUTES, AUTH_ROUTES, PROTECTED_ROUTES } from './routes';
 import CourseListingPage from './pages/CourseListingPage';
@@ -26,9 +28,12 @@ import InstructorCourseFormPage from './pages/InstructorCourseFormPage';
 import InstructorCourseContentPage from './pages/InstructorCourseContentPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AuthSuccess from './pages/AuthSuccess';
+import ReduxModal from './components/common/ReduxModal';
 
 const PrivateRoutes = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
+  const loading = useSelector(selectAuthLoading);
 
   if (loading) {
     return (
@@ -51,10 +56,11 @@ const PrivateRoutes = ({ children, allowedRoles = [] }) => {
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col font-sans">
-      <Navbar />
-      <main className="flex-grow pt-16">
-        <Routes>
+    <ReduxInitializer>
+      <div className="min-h-screen flex flex-col font-sans">
+        <Navbar />
+        <main className="flex-grow pt-16">
+          <Routes>
           {/* Public Routes */}
           <Route path={PUBLIC_ROUTES.home} element={<HomePage />} />
           <Route path={PUBLIC_ROUTES.courseListing} element={<CourseListingPage />} />
@@ -174,9 +180,11 @@ function App() {
 
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </main>
-      <Footer />
-    </div>
+        </main>
+        <Footer />
+        <ReduxModal />
+      </div>
+    </ReduxInitializer>
   );
 }
 

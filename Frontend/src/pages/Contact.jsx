@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDispatch } from 'react-redux';
+import { showModal } from '../Redux/slices/uiSlice';
 import Button from '../components/common/Button';
-import { useAuth } from '../context/AuthContext';
 
 function Contact() {
-  const { showModal } = useAuth();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,22 +27,18 @@ function Contact() {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Message Sent',
-        message: 'We’ve received your message and will respond soon.',
+        message: 'We have received your message and will respond soon.',
         type: 'success',
-        onClose: () => {}, 
-      });
+      }));
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Submission Failed',
         message: 'An error occurred. Please try again later.',
         type: 'error',
-        onClose: () => {}, 
-      });
+      }));
     } finally {
       setSubmitting(false);
     }

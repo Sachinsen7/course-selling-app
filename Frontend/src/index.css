@@ -4,6 +4,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Variables for Theme */
+:root {
+  /* Light theme (default) */
+  --color-primary: #1B3C53;
+  --color-primary-light: #456882;
+  --color-primary-dark: #132D40;
+  --color-secondary: #FFFFFF;
+  --color-background: #FFFFFF;
+  --color-background-card: #F9FAFB;
+  --color-background-body: #FFFFFF;
+  --color-text-primary: #1B3C53;
+  --color-text-secondary: #6B7280;
+  --color-success: #4A8292;
+  --color-error: #DC2626;
+  --color-warning: #D97706;
+}
+
+/* Dark theme */
+.dark {
+  --color-primary: #3B82F6;
+  --color-primary-light: #60A5FA;
+  --color-primary-dark: #1E40AF;
+  --color-secondary: #1F2937;
+  --color-background: #111827;
+  --color-background-card: #1F2937;
+  --color-background-body: #0F172A;
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #D1D5DB;
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion {
     animation: none !important;
@@ -15,6 +48,16 @@ body {
   font-family: "Montserrat", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #FFFFFF; 
-  color: #1B3C53; 
+  background-color: var(--color-background-body);
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* Utility classes for theme-aware styling */
+.bg-theme-primary { background-color: var(--color-primary); }
+.bg-theme-secondary { background-color: var(--color-secondary); }
+.bg-theme-background { background-color: var(--color-background); }
+.bg-theme-card { background-color: var(--color-background-card); }
+.text-theme-primary { color: var(--color-text-primary); }
+.text-theme-secondary { color: var(--color-text-secondary); }
+.border-theme { border-color: var(--color-text-secondary); }

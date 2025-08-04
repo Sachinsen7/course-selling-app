@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { signupUser, selectAuthLoading } from '../Redux/slices/authSlice';
 import Button from '../components/common/Button';
 import GoogleOAuthButton from '../components/auth/GoogleOAuthButton';
 import { AUTH_ROUTES, PROTECTED_ROUTES } from '../routes';
@@ -14,7 +15,8 @@ function Signup() {
     role: 'learner'
   });
   const [error, setError] = useState('');
-  const { signup, loading } = useAuth();
+  const dispatch = useDispatch();
+  const loading = useSelector(selectAuthLoading);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -28,16 +30,21 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     try {
-      const data = await signup(formData);
-      
-      if (data.role === 'instructor') {
-        navigate(PROTECTED_ROUTES.instructor, { replace: true });
-      } else if (data.role === 'admin') {
-        navigate('/admin/dashboard', { replace: true });
+      const result = await dispatch(signupUser(formData));
+
+      if (signupUser.fulfilled.match(result)) {
+        const data = result.payload;
+        if (data.user.role === 'instructor') {
+          navigate(PROTECTED_ROUTES.instructor, { replace: true });
+        } else if (data.user.role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate(PROTECTED_ROUTES.dashboard, { replace: true });
+        }
       } else {
-        navigate(PROTECTED_ROUTES.dashboard, { replace: true });
+        setError(result.payload || 'An unexpected error occurred. Please try again.');
       }
     } catch (err) {
       setError(err.message || 'An unexpected error occurred. Please try again.');

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useDispatch } from 'react-redux';
+import { oauthLogin } from '../Redux/slices/authSlice';
 
 const AuthSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { oauthLogin } = useAuth();
+  const dispatch = useDispatch();
   const [status, setStatus] = useState('processing');
 
   useEffect(() => {
@@ -19,10 +20,10 @@ const AuthSuccess = () => {
           return;
         }
 
-        // Store token and update auth context
+
         localStorage.setItem('token', token);
         
-        // Fetch user data with the token
+      
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -31,10 +32,10 @@ const AuthSuccess = () => {
 
         if (response.ok) {
           const userData = await response.json();
-          oauthLogin(userData.user, token);
+          dispatch(oauthLogin({ userData: userData.user, authToken: token }));
           setStatus('success');
           
-          // Redirect to dashboard after 2 seconds
+      
           setTimeout(() => {
             navigate('/dashboard');
           }, 2000);

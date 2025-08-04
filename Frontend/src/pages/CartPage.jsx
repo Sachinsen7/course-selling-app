@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated } from '../Redux/slices/authSlice';
 import { useCart } from '../hooks/useCart';
 import Button from '../components/common/Button';
 import { PUBLIC_ROUTES, PROTECTED_ROUTES } from '../routes';
 
 function CartPage() {
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const navigate = useNavigate();
   const { 
     cartItems, 
