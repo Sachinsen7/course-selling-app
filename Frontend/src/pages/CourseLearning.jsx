@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectIsAuthenticated, selectAuthLoading } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import { getEnrolledCourseDetails, updateLectureProgress, getCourseProgress } from '../services/api';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
@@ -15,7 +17,10 @@ import ProgressTracker from '../components/learning/ProgressTracker';
 function CourseLearning() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, loading: authLoading, showModal } = useAuth();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const authLoading = useSelector(selectAuthLoading);
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
