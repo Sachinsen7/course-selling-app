@@ -1,10 +1,13 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { AUTH_ROUTES } from '../routes'; 
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated, selectUser, selectAuthLoading } from '../Redux/slices/authSlice';
+import { AUTH_ROUTES } from '../routes';
 
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
+  const loading = useSelector(selectAuthLoading);
 
   if (loading) {
     return (
