@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { loginUser, selectAuthLoading } from '../Redux/slices/authSlice';
 import Button from '../components/common/Button';
 import GoogleOAuthButton from '../components/auth/GoogleOAuthButton';
 import { AUTH_ROUTES, PROTECTED_ROUTES } from '../routes';
@@ -9,22 +10,28 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, loading } = useAuth();
+  const dispatch = useDispatch();
+  const loading = useSelector(selectAuthLoading);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     try {
-      const data = await login({ email, password });
-      
-      if (data.role === 'instructor') {
-        navigate(PROTECTED_ROUTES.instructor, { replace: true });
-      } else if (data.role === 'admin') {
-        navigate('/admin/dashboard', { replace: true });
+      const result = await dispatch(loginUser({ email, password }));
+
+      if (loginUser.fulfilled.match(result)) {
+        const data = result.payload;
+        if (data.user.role === 'instructor') {
+          navigate(PROTECTED_ROUTES.instructor, { replace: true });
+        } else if (data.user.role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate(PROTECTED_ROUTES.dashboard, { replace: true });
+        }
       } else {
-        navigate(PROTECTED_ROUTES.dashboard, { replace: true });
+        setError(result.payload || 'Please check your input.');
       }
     } catch (err) {
       setError(err.message || 'Please check your input.');
