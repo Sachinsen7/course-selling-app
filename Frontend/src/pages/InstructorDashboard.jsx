@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectAuthLoading } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import { getInstructorCourses, deleteInstructorCourse } from '../services/api';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
@@ -8,7 +10,9 @@ import Modal from '../components/common/Modal';
 import { PUBLIC_ROUTES } from '../routes';
 
 function InstructorDashboard() {
-  const { user, loading: authLoading, showModal } = useAuth();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const authLoading = useSelector(selectAuthLoading);
   const navigate = useNavigate();
 
   const [courses, setCourses] = useState([]);
@@ -37,12 +41,11 @@ function InstructorDashboard() {
       setCourses(data.courses);
     } catch (err) {
       setError(err.message || 'Failed to load your courses.');
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Error',
         message: err.message || 'Failed to load your courses.',
         type: 'error',
-      });
+      }));
     } finally {
       setLoading(false);
     }
@@ -61,20 +64,18 @@ function InstructorDashboard() {
     setLoading(true);
     try {
       await deleteInstructorCourse(confirmModal.courseIdToDelete);
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Course Deleted',
         message: `"${confirmModal.courseTitleToDelete}" has been successfully deleted.`,
         type: 'success',
-      });
+      }));
       fetchInstructorCourses();
     } catch (err) {
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Deletion Failed',
         message: err.message || 'Failed to delete the course.',
         type: 'error',
-      });
+      }));
     } finally {
       setLoading(false);
     }
