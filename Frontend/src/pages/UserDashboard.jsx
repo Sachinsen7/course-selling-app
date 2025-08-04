@@ -1,6 +1,8 @@
 import React, {useState, useEffect} from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useSelector, useDispatch } from 'react-redux'
+import { selectUser, selectAuthLoading } from '../Redux/slices/authSlice'
+import { showModal } from '../Redux/slices/uiSlice'
 import { getPurchasedCourses, getCourseProgress } from '../services/api'
 import Loader from '../components/common/Loader'
 import Button from '../components/common/Button'
@@ -8,7 +10,9 @@ import { PROTECTED_ROUTES, PUBLIC_ROUTES } from '../routes'
 
 
 function UserDashboard() {
-  const {user, loading: authLoading, showModel} = useAuth();
+  const dispatch = useDispatch()
+  const user = useSelector(selectUser)
+  const authLoading = useSelector(selectAuthLoading)
 
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [courseProgressMap, setCourseProgressMap] = useState({}); 
