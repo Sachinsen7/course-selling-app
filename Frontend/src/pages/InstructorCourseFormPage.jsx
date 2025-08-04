@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectAuthLoading } from '../Redux/slices/authSlice';
+import { showModal } from '../Redux/slices/uiSlice';
 import { createCourse, updateInstructorCourse, getInstructorCourses, getAllCategories } from '../services/api';
 import Loader from '../components/common/Loader';
 import Button from '../components/common/Button';
@@ -9,7 +11,10 @@ import { PROTECTED_ROUTES } from '../routes';
 function InstructorCourseFormPage() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading, showModal, token } = useAuth();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const authLoading = useSelector(selectAuthLoading);
+  const token = localStorage.getItem('token');
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -32,14 +37,13 @@ function InstructorCourseFormPage() {
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'instructor')) {
       navigate(PROTECTED_ROUTES.dashboard, { replace: true });
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Access Denied',
         message: 'You must be an instructor to manage courses.',
         type: 'error',
-      });
+      }));
     }
-  }, [authLoading, user, navigate, showModal]);
+  }, [authLoading, user, navigate, dispatch]);
 
   // Separate useEffect for data fetching
   useEffect(() => {
@@ -83,12 +87,11 @@ function InstructorCourseFormPage() {
       } catch (err) {
         console.error('Error fetching form data:', err);
         setError(err.message || 'Failed to load form data.');
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: 'Error',
           message: err.message || 'Failed to load form data.',
           type: 'error',
-        });
+        }));
       } finally {
         setLoading(false);
       }
@@ -120,24 +123,22 @@ function InstructorCourseFormPage() {
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
         console.error('Invalid file type:', file.type);
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: 'Invalid File Type',
           message: 'Please select a valid image file (JPEG, PNG, GIF, or WebP).',
           type: 'error',
-        });
+        }));
         return;
       }
 
       // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
         console.error('File too large:', file.size);
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: 'File Too Large',
           message: 'Please select an image smaller than 10MB.',
           type: 'error',
-        });
+        }));
         return;
       }
 
@@ -238,12 +239,11 @@ function InstructorCourseFormPage() {
           response = await updateInstructorCourse(courseId, dataToSubmit);
         }
 
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: 'Course Updated!',
           message: `${formData.title} has been updated successfully.`,
           type: 'success',
-        });
+        }));
       } else {
         // For creation, always use FormData
         const formDataToSubmit = new FormData();
@@ -282,23 +282,21 @@ function InstructorCourseFormPage() {
 
         response = await response.json();
 
-        showModal({
-          isOpen: true,
+        dispatch(showModal({
           title: 'Course Created!',
           message: `${formData.title} has been created successfully.`,
           type: 'success',
-        });
+        }));
       }
       navigate(PROTECTED_ROUTES.instructor, { replace: true });
     } catch (err) {
       console.error('Submission error:', err);
       setError(err.message || 'Failed to save course.');
-      showModal({
-        isOpen: true,
+      dispatch(showModal({
         title: 'Submission Failed',
         message: err.message || 'Could not save course.',
         type: 'error',
-      });
+      }));
     } finally {
       setSubmitting(false);
     }
