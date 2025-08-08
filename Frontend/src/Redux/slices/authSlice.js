@@ -7,13 +7,18 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const data = await authServiceLogin(credentials.email, credentials.password);
+      // Persist token immediately so interceptors work on next requests
+      if (data?.token) {
+        localStorage.setItem('token', data.token);
+      }
       return {
         token: data.token,
         user: {
           userId: data.userId,
           role: data.role,
-          firstName: data.firstName,
-          lastName: data.lastName,
+          // Backend signin response does not include names; fall back to profile fetch later
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
           email: credentials.email,
           profilePicture: data.profilePicture || null,
           bio: data.bio || ''
@@ -207,7 +212,7 @@ const authSlice = createSlice({
         state.modal = {
           isOpen: true,
           title: 'Login Successful!',
-          message: `Welcome back, ${action.payload.user.firstName}!`,
+          message: `Welcome back${action.payload.user.firstName ? `, ${action.payload.user.firstName}` : ''}!`,
           type: 'success',
         };
       })
