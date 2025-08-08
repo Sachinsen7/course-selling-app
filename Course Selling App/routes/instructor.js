@@ -339,6 +339,7 @@ instructorRouter.get("/my-courses", authMiddleware, async (req, res) => {
     const creatorId = req.userId;
     try {
         const courses = await CourseModel.find({ creatorId: creatorId })
+            .populate('category', 'name')
             .populate({
                 path: 'sections',
                 populate: {
