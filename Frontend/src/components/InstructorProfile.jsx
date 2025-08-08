@@ -18,14 +18,20 @@ function InstructorProfile({ instructor, showFullProfileLink = false }) {
     >
       <div className="flex items-center mb-md">
         <motion.img
-          src={instructor.profilePicture || 'https://via.placeholder.com/80x80/F9F3EF/1B3C53?text=Instructor'}
-          alt={`${instructor.firstName} ${instructor.secondName}`}
+          src={
+            instructor.profilePicture?.startsWith('http')
+              ? instructor.profilePicture
+              : instructor.profilePicture
+                ? `http://localhost:3000${instructor.profilePicture}`
+                : 'https://via.placeholder.com/80x80/F9F3EF/1B3C53?text=Instructor'
+          }
+          alt={`${instructor.firstName} ${instructor.lastName}`}
           className="w-16 h-16 rounded-full mr-md object-cover border-2 border-primary-main shadow-sm"
           whileHover={{ scale: 1.05 }}
         />
         <div>
           <h3 className="text-xl font-bold text-text-primary">
-            {instructor.firstName} {instructor.secondName}
+            {instructor.firstName} {instructor.lastName}
           </h3>
           <p className="text-text-secondary text-sm font-medium">Instructor</p>
         </div>
