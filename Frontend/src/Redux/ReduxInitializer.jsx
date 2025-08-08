@@ -18,8 +18,8 @@ const ReduxInitializer = ({ children }) => {
   }, [dispatch]);
 
   useEffect(() => {
-    // Fetch complete user profile if we have a token but incomplete user data
-    if (token && (!user || !user.email)) {
+    // Fetch complete user profile if we have a token but missing key user details
+    if (token && (!user || !user.firstName)) {
       dispatch(fetchUserProfile(token));
     }
   }, [dispatch, token, user]);
