@@ -67,7 +67,8 @@ searchRouter.get("/courses", async (req, res) => {
     const courses = await CourseModel.find(query)
       .skip(skip)
       .limit(limit)
-      .populate("creatorId", "firstName lastName profilePicture");
+      .populate("creatorId", "firstName lastName profilePicture")
+      .populate("category", "name");
 
     const totalCourses = await CourseModel.countDocuments(query);
 
@@ -98,6 +99,7 @@ searchRouter.get("/courses/:courseId", async (req, res) => {
   try {
     const course = await CourseModel.findById(courseId)
       .populate("creatorId", "firstName lastName profilePicture")
+      .populate('category', 'name')
       .populate({
         path: "sections",
         select: "title order lectures",
@@ -124,7 +126,7 @@ searchRouter.get("/courses/:courseId", async (req, res) => {
         _id: sortedCourse._id,
         title: sortedCourse.title,
         description: sortedCourse.description,
-        category: sortedCourse.category,
+        category: sortedCourse.category && sortedCourse.category.name ? { _id: sortedCourse.category._id, name: sortedCourse.category.name } : sortedCourse.category,
         price: sortedCourse.price,
         creatorId: sortedCourse.creatorId,
         sections: sortedCourse.sections,
