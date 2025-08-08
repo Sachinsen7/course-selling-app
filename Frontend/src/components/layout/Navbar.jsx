@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useSelector, useDispatch } from "react-redux";
-import { selectUser, selectIsAuthenticated, logout } from "../../Redux/slices/authSlice";
-import { selectCartCount } from "../../Redux/slices/cartSlice";
-import { useWishlist } from "../../hooks/useWishlist";
-import Button from "../common/Button";
-import ThemeToggle from "../common/ThemeToggle";
-import { AUTH_ROUTES, PROTECTED_ROUTES, PUBLIC_ROUTES } from "../../routes";
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectIsAuthenticated, logout } from '../../Redux/slices/authSlice';
+import { selectCartCount } from '../../Redux/slices/cartSlice';
+import { useWishlist } from '../../hooks/useWishlist';
+import Button from '../common/Button';
+import ThemeToggle from '../common/ThemeToggle';
+import SearchBar from '../common/SearchBar';
+import { AUTH_ROUTES, PROTECTED_ROUTES, PUBLIC_ROUTES } from '../../routes';
 
 function Navbar() {
   const dispatch = useDispatch();
@@ -17,20 +18,17 @@ function Navbar() {
   const { wishlistCount } = useWishlist();
   const location = useLocation();
 
-  // Debug user data changes
-  React.useEffect(() => {
-    console.log('Navbar - User data changed:', user);
-  }, [user]);
-
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
- 
+  useEffect(() => {
+    console.log('Navbar - User data changed:', user);
+  }, [user]);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -38,7 +36,6 @@ function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -53,24 +50,19 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
   }, [location.pathname]);
 
-
   const getProfilePicture = () => {
     if (user?.profilePicture) {
-      // If it's a full URL, use it directly
       if (user.profilePicture.startsWith('http')) {
         return user.profilePicture;
       }
-      // If it's a relative path, prepend the server URL
       return `http://localhost:3000${user.profilePicture}`;
     }
-    // Fallback to placeholder with user's initial
-    return `https://placehold.co/40x40/F9F3EF/1B3C53?text=${user?.firstName ? user.firstName[0].toUpperCase() : 'U'}`;
+    return `https://placehold.co/40x40/F9FAFB/1B3C53?text=${user?.firstName ? user.firstName[0].toUpperCase() : 'U'}`;
   };
 
   const getPrimaryDashboardLink = () => {
@@ -84,19 +76,43 @@ function Navbar() {
     return location.pathname === path;
   };
 
-
   const navigationItems = [
     { name: 'Courses', path: PUBLIC_ROUTES.courseListing },
     { name: 'About', path: PUBLIC_ROUTES.about },
     { name: 'Contact', path: PUBLIC_ROUTES.contact },
   ];
 
+  // Custom SVG Icons
+  const LogoIcon = () => (
+    <svg className="w-8 h-8 text-[#1B3C53]" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+    </svg>
+  );
+
+  const WishlistIcon = () => (
+    <svg className="w-6 h-6 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  );
+
+  const CartIcon = () => (
+    <svg className="w-6 h-6 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m0 0h8m-8 0a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4z" />
+    </svg>
+  );
+
+  const NotificationIcon = () => (
+    <svg className="w-6 h-6 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  );
+
   return (
     <motion.nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100'
-          : 'bg-white shadow-md'
+          ? 'bg-[#FFFFFF]/95 backdrop-blur-md shadow-lg border-b border-[#E5E7EB]'
+          : 'bg-[#FFFFFF] shadow-md'
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -104,22 +120,19 @@ function Navbar() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          {/* Logo */}
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               to={PUBLIC_ROUTES.home}
-              className="flex items-center space-x-2 text-2xl font-bold text-primary-main hover:text-primary-light transition-colors duration-200"
+              className="flex items-center space-x-2 text-2xl font-serif font-bold text-[#1B3C53] hover:text-[#456882] transition-colors duration-200"
+              aria-label="LearnSphere Home"
             >
-              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
+              <LogoIcon />
               <span>LearnSphere</span>
             </Link>
           </motion.div>
 
-       
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navigationItems.map((item) => (
               <Link
@@ -127,14 +140,15 @@ function Navbar() {
                 to={item.path}
                 className={`relative px-3 py-2 text-sm font-medium transition-colors duration-200 ${
                   isActiveLink(item.path)
-                    ? 'text-primary-main'
-                    : 'text-gray-700 hover:text-primary-main'
+                    ? 'text-[#1B3C53]'
+                    : 'text-[#6B7280] hover:text-[#4A8292]'
                 }`}
+                aria-current={isActiveLink(item.path) ? 'page' : undefined}
               >
                 {item.name}
                 {isActiveLink(item.path) && (
                   <motion.div
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-main"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4A8292]"
                     layoutId="activeTab"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -145,222 +159,231 @@ function Navbar() {
             ))}
           </div>
 
-  
-          <div className="hidden md:flex items-center space-x-4">
-            {isAuthenticated && (
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Link
-                  to={PROTECTED_ROUTES.wishlist}
-                  className="relative flex items-center justify-center p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100 w-10 h-10"
-                  title="My Wishlist"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  {wishlistCount > 0 && (
-                    <motion.span
-                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    >
-                      {wishlistCount > 99 ? '99+' : wishlistCount}
-                    </motion.span>
-                  )}
-                </Link>
-              </motion.div>
-            )}
-
-
-            {isAuthenticated && (
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Link
-                  to={PROTECTED_ROUTES.cart}
-                  className="relative flex items-center justify-center p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100 w-10 h-10"
-                  title="Shopping Cart"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m0 0h8m-8 0a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4z" />
-                  </svg>
-                  {/* Cart count badge */}
-                  {cartCount > 0 && (
-                    <motion.span
-                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    >
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </motion.span>
-                  )}
-                </Link>
-              </motion.div>
-            )}
-
-            {isAuthenticated && (
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <button
-                  className="relative flex items-center justify-center p-2 text-gray-600 hover:text-primary-main transition-colors duration-200 rounded-full hover:bg-gray-100 w-10 h-10"
-                  title="Notifications"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {/* Notification badge */}
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-2 w-2"></span>
-                </button>
-              </motion.div>
-            )}
-
-            {/* Theme Toggle */}
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <ThemeToggle size="md" className="ml-2" />
-            </motion.div>
+          {/* Search Bar */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-8">
+            <SearchBar
+              className="w-full bg-[#F9FAFB] border-[#E5E7EB] focus:ring-[#4A8292] text-[#6B7280]"
+              placeholder="Search courses..."
+              aria-label="Search courses"
+            />
           </div>
 
-          {/* User Menu */}
-          {isAuthenticated ? (
-            <div className="relative" ref={dropdownRef}>
-              <motion.button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <img
-                  src={getProfilePicture()}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full border-2 border-gray-200 object-cover"
-                />
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </motion.button>
-
-              {/* Dropdown Menu */}
-              <AnimatePresence>
-                {isDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50"
+          {/* Desktop Icons and User Menu */}
+          <div className="hidden md:flex items-center space-x-4">
+            {isAuthenticated && (
+              <>
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Link
+                    to={PROTECTED_ROUTES.wishlist}
+                    className="relative flex items-center justify-center p-2 text-[#6B7280] hover:text-[#4A8292] transition-colors duration-200 rounded-full hover:bg-[#F9FAFB] w-10 h-10"
+                    title="My Wishlist"
+                    aria-label="View wishlist"
                   >
-                    {/* User Info */}
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={getProfilePicture()}
-                          alt="Profile"
-                          className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
-                        />
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {user?.firstName || 'User'} {user?.lastName || ''}
-                          </p>
-                          <p className="text-sm text-gray-500">{user?.email || ''}</p>
-                          <span className="inline-block px-2 py-1 text-xs bg-primary-main/10 text-primary-main rounded-full capitalize">
-                            {user?.role || 'user'}
-                          </span>
+                    <WishlistIcon />
+                    {wishlistCount > 0 && (
+                      <motion.span
+                        className="absolute -top-1 -right-1 bg-[#4A8292] text-[#FFFFFF] text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      >
+                        {wishlistCount > 99 ? '99+' : wishlistCount}
+                      </motion.span>
+                    )}
+                  </Link>
+                </motion.div>
+
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Link
+                    to={PROTECTED_ROUTES.cart}
+                    className="relative flex items-center justify-center p-2 text-[#6B7280] hover:text-[#4A8292] transition-colors duration-200 rounded-full hover:bg-[#F9FAFB] w-10 h-10"
+                    title="Shopping Cart"
+                    aria-label="View cart"
+                  >
+                    <CartIcon />
+                    {cartCount > 0 && (
+                      <motion.span
+                        className="absolute -top-1 -right-1 bg-[#4A8292] text-[#FFFFFF] text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      >
+                        {cartCount > 99 ? '99+' : cartCount}
+                      </motion.span>
+                    )}
+                  </Link>
+                </motion.div>
+
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <button
+                    className="relative flex items-center justify-center p-2 text-[#6B7280] hover:text-[#4A8292] transition-colors duration-200 rounded-full hover:bg-[#F9FAFB] w-10 h-10"
+                    title="Notifications"
+                    aria-label="View notifications"
+                  >
+                    <NotificationIcon />
+                    <span className="absolute -top-1 -right-1 bg-[#4A8292] text-[#FFFFFF] text-xs rounded-full h-2 w-2"></span>
+                  </button>
+                </motion.div>
+              </>
+            )}
+
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <ThemeToggle size="md" className="ml-2" aria-label="Toggle theme" />
+            </motion.div>
+
+            {isAuthenticated ? (
+              <div className="relative" ref={dropdownRef}>
+                <motion.button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center space-x-2 p-1 rounded-full hover:bg-[#F9FAFB] transition-colors duration-200"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Open user menu"
+                >
+                  <img
+                    src={getProfilePicture()}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full border-2 border-[#E5E7EB] object-cover"
+                  />
+                  <svg className="w-4 h-4 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </motion.button>
+
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-72 bg-[#FFFFFF] rounded-xl shadow-lg border border-[#E5E7EB] py-2 z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-[#E5E7EB]">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={getProfilePicture()}
+                            alt="Profile"
+                            className="w-10 h-10 rounded-full border-2 border-[#E5E7EB] object-cover"
+                          />
+                          <div>
+                            <p className="font-semibold text-[#1B3C53]">
+                              {user?.firstName || 'User'} {user?.lastName || ''}
+                            </p>
+                            <p className="text-sm text-[#6B7280]">{user?.email || ''}</p>
+                            <span className="inline-block px-2 py-1 text-xs bg-[#4A8292]/10 text-[#4A8292] rounded-full capitalize">
+                              {user?.role || 'user'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Menu Items */}
-                    <div className="py-2">
-                      <Link
-                        to={getPrimaryDashboardLink()}
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                        </svg>
-                        Dashboard
-                      </Link>
-                      <Link
-                        to={PROTECTED_ROUTES.profile}
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Profile Settings
-                      </Link>
-                      <Link
-                        to={PROTECTED_ROUTES.wishlist}
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                        Wishlist
-                        {wishlistCount > 0 && (
-                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {wishlistCount}
-                          </span>
-                        )}
-                      </Link>
-                      <Link
-                        to={PROTECTED_ROUTES.cart}
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m0 0h8m-8 0a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4z" />
-                        </svg>
-                        Shopping Cart
-                      </Link>
-                      <Link
-                        to={PROTECTED_ROUTES.helpSupport}
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Help & Support
-                      </Link>
-                    </div>
+                      <div className="py-2">
+                        <Link
+                          to={getPrimaryDashboardLink()}
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center px-4 py-2 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292] transition-colors duration-150"
+                          aria-label="Go to dashboard"
+                        >
+                          <svg className="w-5 h-5 mr-3 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                          </svg>
+                          Dashboard
+                        </Link>
+                        <Link
+                          to={PROTECTED_ROUTES.profile}
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center px-4 py-2 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292] transition-colors duration-150"
+                          aria-label="Go to profile settings"
+                        >
+                          <svg className="w-5 h-5 mr-3 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Profile Settings
+                        </Link>
+                        <Link
+                          to={PROTECTED_ROUTES.wishlist}
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center px-4 py-2 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292] transition-colors duration-150"
+                          aria-label="Go to wishlist"
+                        >
+                          <WishlistIcon />
+                          Wishlist
+                          {wishlistCount > 0 && (
+                            <span className="ml-auto bg-[#4A8292] text-[#FFFFFF] text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                              {wishlistCount}
+                            </span>
+                          )}
+                        </Link>
+                        <Link
+                          to={PROTECTED_ROUTES.cart}
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center px-4 py-2 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292] transition-colors duration-150"
+                          aria-label="Go to cart"
+                        >
+                          <CartIcon />
+                          Shopping Cart
+                        </Link>
+                        <Link
+                          to={PROTECTED_ROUTES.helpSupport}
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center px-4 py-2 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292] transition-colors duration-150"
+                          aria-label="Go to help and support"
+                        >
+                          <svg className="w-5 h-5 mr-3 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Help & Support
+                        </Link>
+                      </div>
 
-                    {/* Logout */}
-                    <div className="border-t border-gray-100 pt-2">
-                      <button
-                        onClick={() => {
-                          dispatch(logout());
-                          setIsDropdownOpen(false);
-                        }}
-                        className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-150"
-                      >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Sign Out
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <div className="hidden md:flex items-center space-x-3">
-              <Link to={AUTH_ROUTES.login}>
-                <Button variant="outline" text="Sign In" className="px-4 py-2" />
-              </Link>
-              <Link to={AUTH_ROUTES.signup}>
-                <Button text="Sign Up" className="px-4 py-2" />
-              </Link>
-            </div>
-          )}
-          {/* Mobile menu button */}
+                      <div className="border-t border-[#E5E7EB] pt-2">
+                        <button
+                          onClick={() => {
+                            dispatch(logout());
+                            setIsDropdownOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292] transition-colors duration-150"
+                          aria-label="Sign out"
+                        >
+                          <svg className="w-5 h-5 mr-3 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Sign Out
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="hidden md:flex items-center space-x-3">
+                <Link to={AUTH_ROUTES.login}>
+                  <Button
+                    variant="outline"
+                    text="Sign In"
+                    className="px-4 py-2 bg-[#FFFFFF] border-[#1B3C53] text-[#1B3C53] hover:bg-[#1B3C53] hover:text-[#FFFFFF] rounded-full transition-all duration-300"
+                    aria-label="Sign in"
+                  />
+                </Link>
+                <Link to={AUTH_ROUTES.signup}>
+                  <Button
+                    text="Sign Up"
+                    className="px-4 py-2 bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-full transition-all duration-300"
+                    aria-label="Sign up"
+                  />
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <motion.button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-md text-gray-600 hover:text-primary-main hover:bg-gray-100 transition-colors duration-200"
+              className="p-2 rounded-md text-[#6B7280] hover:text-[#4A8292] hover:bg-[#F9FAFB] transition-colors duration-200"
               whileTap={{ scale: 0.95 }}
+              aria-label={isMobileMenuOpen ? 'Close mobile menu' : 'Open mobile menu'}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isMobileMenuOpen ? (
@@ -382,82 +405,87 @@ function Navbar() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden border-t border-gray-100 bg-white"
+              className="md:hidden border-t border-[#E5E7EB] bg-[#FFFFFF]"
             >
               <div className="px-4 py-4 space-y-3">
-                {/* Navigation Links */}
                 {navigationItems.map((item) => (
                   <Link
                     key={item.name}
                     to={item.path}
                     className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                       isActiveLink(item.path)
-                        ? 'text-primary-main bg-primary-main/10'
-                        : 'text-gray-700 hover:text-primary-main hover:bg-gray-50'
+                        ? 'text-[#1B3C53] bg-[#F9FAFB]'
+                        : 'text-[#6B7280] hover:text-[#4A8292] hover:bg-[#F9FAFB]'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-current={isActiveLink(item.path) ? 'page' : undefined}
                   >
                     {item.name}
                   </Link>
                 ))}
 
-                {/* Theme Toggle for Mobile */}
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-gray-700 font-medium">Theme</span>
-                  <ThemeToggle size="sm" />
+                <div className="px-3 py-2">
+                  <SearchBar
+                    className="w-full bg-[#F9FAFB] border-[#E5E7EB] focus:ring-[#4A8292] text-[#6B7280]"
+                    placeholder="Search courses..."
+                    aria-label="Search courses"
+                  />
                 </div>
 
-                {/* Mobile User Section */}
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-[#6B7280] font-medium">Theme</span>
+                  <ThemeToggle size="sm" aria-label="Toggle theme" />
+                </div>
+
                 {isAuthenticated ? (
-                  <div className="border-t border-gray-100 pt-4 mt-4">
+                  <div className="border-t border-[#E5E7EB] pt-4 mt-4">
                     <div className="flex items-center space-x-3 px-3 py-2 mb-3">
                       <img
                         src={getProfilePicture()}
                         alt="Profile"
-                        className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
+                        className="w-10 h-10 rounded-full border-2 border-[#E5E7EB] object-cover"
                       />
                       <div>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-[#1B3C53]">
                           {user?.firstName || 'User'} {user?.lastName || ''}
                         </p>
-                        <p className="text-sm text-gray-500">{user?.email || ''}</p>
+                        <p className="text-sm text-[#6B7280]">{user?.email || ''}</p>
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <Link
                         to={getPrimaryDashboardLink()}
-                        className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                        className="flex items-center px-3 py-2 rounded-md text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292]"
                         onClick={() => setIsMobileMenuOpen(false)}
+                        aria-label="Go to dashboard"
                       >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 mr-3 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                         </svg>
                         Dashboard
                       </Link>
                       <Link
                         to={PROTECTED_ROUTES.wishlist}
-                        className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                        className="flex items-center px-3 py-2 rounded-md text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292]"
                         onClick={() => setIsMobileMenuOpen(false)}
+                        aria-label="Go to wishlist"
                       >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
+                        <WishlistIcon />
                         Wishlist
                         {wishlistCount > 0 && (
-                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          <span className="ml-auto bg-[#4A8292] text-[#FFFFFF] text-xs rounded-full h-5 w-5 flex items-center justify-center">
                             {wishlistCount}
                           </span>
                         )}
                       </Link>
                       <Link
                         to={PROTECTED_ROUTES.cart}
-                        className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                        className="flex items-center px-3 py-2 rounded-md text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292]"
                         onClick={() => setIsMobileMenuOpen(false)}
+                        aria-label="Go to cart"
                       >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m0 0h8m-8 0a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4z" />
-                        </svg>
+                        <CartIcon />
                         Cart
                       </Link>
                       <button
@@ -465,9 +493,10 @@ function Navbar() {
                           dispatch(logout());
                           setIsMobileMenuOpen(false);
                         }}
-                        className="flex items-center w-full px-3 py-2 rounded-md text-red-600 hover:bg-red-50"
+                        className="flex items-center w-full px-3 py-2 rounded-md text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#4A8292]"
+                        aria-label="Sign out"
                       >
-                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 mr-3 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         Sign Out
@@ -475,12 +504,21 @@ function Navbar() {
                     </div>
                   </div>
                 ) : (
-                  <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
+                  <div className="border-t border-[#E5E7EB] pt-4 mt-4 space-y-3">
                     <Link to={AUTH_ROUTES.login} onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="outline" text="Sign In" className="w-full" />
+                      <Button
+                        variant="outline"
+                        text="Sign In"
+                        className="w-full bg-[#FFFFFF] border-[#1B3C53] text-[#1B3C53] hover:bg-[#1B3C53] hover:text-[#FFFFFF] rounded-full"
+                        aria-label="Sign in"
+                      />
                     </Link>
                     <Link to={AUTH_ROUTES.signup} onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button text="Sign Up" className="w-full" />
+                      <Button
+                        text="Sign Up"
+                        className="w-full bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-full"
+                        aria-label="Sign up"
+                      />
                     </Link>
                   </div>
                 )}
