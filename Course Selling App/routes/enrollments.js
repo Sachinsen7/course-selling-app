@@ -137,6 +137,7 @@ enrollmentRouter.get("/purchased-courses/:courseId", authMiddleware, async (req,
 
     const course = await CourseModel.findById(courseId)
       .populate("creatorId", "firstName lastName profilePicture")
+      .populate("category", "name")
       .populate({
         path: "sections",
         select: "title order lectures",
