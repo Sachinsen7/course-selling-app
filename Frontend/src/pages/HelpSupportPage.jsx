@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { showModal } from '../Redux/slices/uiSlice';
@@ -18,10 +18,10 @@ function HelpSupportPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const tabs = [
-    { id: 'faq', name: 'FAQ', icon: '❓' },
-    { id: 'contact', name: 'Contact Us', icon: '📧' },
-    { id: 'guides', name: 'User Guides', icon: '📚' },
-    { id: 'troubleshooting', name: 'Troubleshooting', icon: '🔧' },
+    { id: 'faq', name: 'FAQ' },
+    { id: 'contact', name: 'Contact Us' },
+    { id: 'guides', name: 'User Guides' },
+    { id: 'troubleshooting', name: 'Troubleshooting' },
   ];
 
   const faqData = [
@@ -99,25 +99,21 @@ function HelpSupportPage() {
     {
       title: 'Getting Started Guide',
       description: 'Complete walkthrough for new users',
-      icon: '🚀',
       topics: ['Creating an account', 'Navigating the platform', 'Finding courses', 'Making your first purchase']
     },
     {
       title: 'Learning Effectively',
       description: 'Tips for maximizing your learning experience',
-      icon: '🎯',
       topics: ['Setting learning goals', 'Taking notes', 'Engaging with content', 'Tracking progress']
     },
     {
       title: 'For Instructors',
       description: 'Guide for course creators and instructors',
-      icon: '👨‍🏫',
       topics: ['Creating courses', 'Managing content', 'Student engagement', 'Analytics and insights']
     },
     {
       title: 'Mobile App Guide',
       description: 'Using LearnSphere on mobile devices',
-      icon: '📱',
       topics: ['App installation', 'Offline learning', 'Notifications', 'Syncing progress']
     }
   ];
@@ -160,15 +156,14 @@ function HelpSupportPage() {
     setSubmitting(true);
 
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      showModal({
+      dispatch(showModal({
         isOpen: true,
         title: 'Message Sent!',
         message: 'Thank you for contacting us. We\'ll get back to you within 24 hours.',
         type: 'success',
-      });
+      }));
 
       setContactForm({
         name: '',
@@ -178,12 +173,12 @@ function HelpSupportPage() {
         message: '',
       });
     } catch (error) {
-      showModal({
+      dispatch(showModal({
         isOpen: true,
         title: 'Error',
         message: 'Failed to send message. Please try again.',
         type: 'error',
-      });
+      }));
     } finally {
       setSubmitting(false);
     }
@@ -195,40 +190,36 @@ function HelpSupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-[#FFFFFF] font-sans">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Help & Support</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <h1 className="text-4xl font-serif font-bold text-[#1B3C53] mb-4">Help & Support</h1>
+          <p className="text-xl text-[#6B7280] max-w-2xl mx-auto">
             We're here to help you succeed. Find answers to common questions or get in touch with our support team.
           </p>
         </motion.div>
 
-        {/* Tab Navigation */}
         <div className="flex flex-wrap justify-center mb-8">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 mx-2 mb-2 rounded-lg font-medium transition-all duration-200 ${
+              className={`px-6 py-3 mx-2 mb-2 rounded-md font-medium transition-all duration-200 ${
                 activeTab === tab.id
-                  ? 'bg-primary-main text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  ? 'bg-[#1B3C53] text-[#FFFFFF] shadow-md'
+                  : 'bg-[#F9FAFB] text-[#6B7280] hover:bg-[#E5E7EB] border border-[#E5E7EB]'
               }`}
             >
-              <span className="mr-2">{tab.icon}</span>
               {tab.name}
             </button>
           ))}
         </div>
 
-        {/* Tab Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -239,32 +230,32 @@ function HelpSupportPage() {
           >
             {activeTab === 'faq' && (
               <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+                <h2 className="text-2xl font-serif font-bold text-[#1B3C53] mb-6">Frequently Asked Questions</h2>
                 {faqData.map((category, categoryIndex) => (
                   <div key={categoryIndex} className="mb-8">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
+                    <h3 className="text-xl font-serif font-semibold text-[#1B3C53] mb-4 border-b border-[#E5E7EB] pb-2">
                       {category.category}
                     </h3>
                     <div className="space-y-3">
                       {category.questions.map((faq, faqIndex) => {
                         const faqId = `${categoryIndex}-${faqIndex}`;
                         return (
-                          <div key={faqId} className="bg-white rounded-lg border border-gray-200">
+                          <div key={faqId} className="bg-[#F9FAFB] rounded-md border border-[#E5E7EB]">
                             <button
                               onClick={() => setOpenFaq(openFaq === faqId ? null : faqId)}
-                              className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors duration-200"
+                              className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-[#E5E7EB] transition-colors duration-200"
                             >
-                              <span className="font-medium text-gray-900">{faq.q}</span>
-                              <svg
-                                className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
-                                  openFaq === faqId ? 'rotate-180' : ''
-                                }`}
+                              <span className="font-medium text-[#1B3C53]">{faq.q}</span>
+                              <motion.svg
+                                className="w-5 h-5 text-[#6B7280]"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
+                                animate={{ rotate: openFaq === faqId ? 180 : 0 }}
+                                transition={{ duration: 0.3 }}
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
+                              </motion.svg>
                             </button>
                             <AnimatePresence>
                               {openFaq === faqId && (
@@ -275,7 +266,7 @@ function HelpSupportPage() {
                                   transition={{ duration: 0.3 }}
                                   className="overflow-hidden"
                                 >
-                                  <div className="px-6 pb-4 text-gray-700 border-t border-gray-100">
+                                  <div className="px-6 pb-4 text-[#6B7280] border-t border-[#E5E7EB]">
                                     {faq.a}
                                   </div>
                                 </motion.div>
@@ -292,12 +283,12 @@ function HelpSupportPage() {
 
             {activeTab === 'contact' && (
               <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Our Support Team</h2>
+                <div className="bg-[#F9FAFB] rounded-md shadow-md border border-[#E5E7EB] p-8">
+                  <h2 className="text-2xl font-serif font-bold text-[#1B3C53] mb-6">Contact Our Support Team</h2>
                   <form onSubmit={handleContactSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-[#6B7280] mb-2">
                           Name *
                         </label>
                         <input
@@ -306,11 +297,11 @@ function HelpSupportPage() {
                           value={contactForm.name}
                           onChange={handleInputChange}
                           required
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                          className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:ring-2 focus:ring-[#4A8292] focus:border-transparent"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-[#6B7280] mb-2">
                           Email *
                         </label>
                         <input
@@ -319,20 +310,20 @@ function HelpSupportPage() {
                           value={contactForm.email}
                           onChange={handleInputChange}
                           required
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                          className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:ring-2 focus:ring-[#4A8292] focus:border-transparent"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[#6B7280] mb-2">
                         Category
                       </label>
                       <select
                         name="category"
                         value={contactForm.category}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:ring-2 focus:ring-[#4A8292] focus:border-transparent"
                       >
                         <option value="general">General Inquiry</option>
                         <option value="technical">Technical Support</option>
@@ -343,7 +334,7 @@ function HelpSupportPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[#6B7280] mb-2">
                         Subject *
                       </label>
                       <input
@@ -352,12 +343,12 @@ function HelpSupportPage() {
                         value={contactForm.subject}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:ring-2 focus:ring-[#4A8292] focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[#6B7280] mb-2">
                         Message *
                       </label>
                       <textarea
@@ -366,7 +357,7 @@ function HelpSupportPage() {
                         onChange={handleInputChange}
                         required
                         rows={6}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:ring-2 focus:ring-[#4A8292] focus:border-transparent"
                         placeholder="Please describe your issue or question in detail..."
                       />
                     </div>
@@ -375,24 +366,24 @@ function HelpSupportPage() {
                       type="submit"
                       text={submitting ? 'Sending...' : 'Send Message'}
                       disabled={submitting}
-                      className="w-full"
+                      className="w-full bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md"
                     />
                   </form>
 
-                  <div className="mt-8 pt-8 border-t border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Other Ways to Reach Us</h3>
-                    <div className="space-y-3 text-gray-600">
+                  <div className="mt-8 pt-8 border-t border-[#E5E7EB]">
+                    <h3 className="text-lg font-serif font-semibold text-[#1B3C53] mb-4">Other Ways to Reach Us</h3>
+                    <div className="space-y-3 text-[#6B7280]">
                       <div className="flex items-center">
-                        <span className="mr-3">📧</span>
+                        <span className="mr-3">Email:</span>
                         <span>support@learnsphere.com</span>
                       </div>
                       <div className="flex items-center">
-                        <span className="mr-3">📞</span>
+                        <span className="mr-3">Phone:</span>
                         <span>+1 (555) 123-4567</span>
                       </div>
                       <div className="flex items-center">
-                        <span className="mr-3">💬</span>
-                        <span>Live chat available 9 AM - 6 PM EST</span>
+                        <span className="mr-3">Live chat:</span>
+                        <span>Available 9 AM - 6 PM EST</span>
                       </div>
                     </div>
                   </div>
@@ -402,21 +393,20 @@ function HelpSupportPage() {
 
             {activeTab === 'guides' && (
               <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">User Guides</h2>
+                <h2 className="text-2xl font-serif font-bold text-[#1B3C53] mb-6">User Guides</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {userGuides.map((guide, index) => (
-                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div key={index} className="bg-[#F9FAFB] rounded-md shadow-md border border-[#E5E7EB] p-6">
                       <div className="flex items-center mb-4">
-                        <span className="text-3xl mr-3">{guide.icon}</span>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{guide.title}</h3>
-                          <p className="text-gray-600">{guide.description}</p>
+                          <h3 className="text-lg font-serif font-semibold text-[#1B3C53]">{guide.title}</h3>
+                          <p className="text-[#6B7280]">{guide.description}</p>
                         </div>
                       </div>
                       <ul className="space-y-2 mb-4">
                         {guide.topics.map((topic, topicIndex) => (
-                          <li key={topicIndex} className="flex items-center text-gray-700">
-                            <span className="w-2 h-2 bg-primary-main rounded-full mr-3"></span>
+                          <li key={topicIndex} className="flex items-center text-[#6B7280]">
+                            <span className="w-2 h-2 bg-[#4A8292] rounded-full mr-3"></span>
                             {topic}
                           </li>
                         ))}
@@ -424,13 +414,13 @@ function HelpSupportPage() {
                       <Button
                         text="Read Guide"
                         variant="outline"
-                        className="w-full"
-                        onClick={() => showModal({
+                        className="w-full bg-[#F9FAFB] border-[#1B3C53] text-[#1B3C53] hover:bg-[#1B3C53] hover:text-[#FFFFFF] rounded-md"
+                        onClick={() => dispatch(showModal({
                           isOpen: true,
                           title: 'Coming Soon',
                           message: 'Detailed user guides are coming soon!',
                           type: 'info',
-                        })}
+                        }))}
                       />
                     </div>
                   ))}
@@ -440,18 +430,18 @@ function HelpSupportPage() {
 
             {activeTab === 'troubleshooting' && (
               <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Troubleshooting</h2>
+                <h2 className="text-2xl font-serif font-bold text-[#1B3C53] mb-6">Troubleshooting</h2>
                 <div className="space-y-6">
                   {troubleshootingSteps.map((item, index) => (
-                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">{item.issue}</h3>
+                    <div key={index} className="bg-[#F9FAFB] rounded-md shadow-md border border-[#E5E7EB] p-6">
+                      <h3 className="text-lg font-serif font-semibold text-[#1B3C53] mb-4">{item.issue}</h3>
                       <ol className="space-y-2">
                         {item.steps.map((step, stepIndex) => (
                           <li key={stepIndex} className="flex items-start">
-                            <span className="flex-shrink-0 w-6 h-6 bg-primary-main text-white rounded-full flex items-center justify-center text-sm font-medium mr-3 mt-0.5">
+                            <span className="flex-shrink-0 w-6 h-6 bg-[#1B3C53] text-[#FFFFFF] rounded-full flex items-center justify-center text-sm font-medium mr-3 mt-0.5">
                               {stepIndex + 1}
                             </span>
-                            <span className="text-gray-700">{step}</span>
+                            <span className="text-[#6B7280]">{step}</span>
                           </li>
                         ))}
                       </ol>
