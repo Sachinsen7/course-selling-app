@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch } from 'react-redux';
 import { showModal } from '../../Redux/slices/uiSlice';
-import { createQuiz, createQuestion, getQuizForInstructor, updateLecture, updateQuiz, deleteQuiz } from '../../services/api';
+import { createQuiz, createQuestion, getQuizForInstructor, updateLecture, deleteQuiz } from '../../services/api';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 
@@ -32,7 +32,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
   const [existingQuiz, setExistingQuiz] = useState(null);
   const [checkingExistingQuiz, setCheckingExistingQuiz] = useState(false);
 
-  // Check if quiz already exists for this lecture
   const checkExistingQuiz = useCallback(async () => {
     if (!lectureId) return;
 
@@ -48,7 +47,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         }));
       }
     } catch (error) {
-      // If 404, no quiz exists - this is fine
       if (error.response?.status !== 404) {
         console.error('Error checking existing quiz:', error);
       }
@@ -57,7 +55,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
     }
   }, [lectureId, dispatch]);
 
-  // Delete existing quiz and allow creating a new one
   const handleDeleteExistingQuiz = useCallback(async () => {
     if (!existingQuiz) return;
 
@@ -101,7 +98,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
     const { name, value } = e.target;
 
     if (name === 'type') {
-      // Reset question structure based on type
       if (value === 'multiple-choice') {
         setCurrentQuestion(prev => ({
           ...prev,
@@ -211,7 +207,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
       const validOptions = currentQuestion.options.filter(opt => opt.text.trim());
 
       if (validOptions.length < 2) {
-
         dispatch(showModal({
           title: 'Validation Error',
           message: 'Multiple choice questions need at least 2 options.',
@@ -220,10 +215,8 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         return;
       }
 
-      // Check if all options meet minimum length requirement
       const shortOptions = validOptions.filter(opt => opt.text.trim().length < 2);
       if (shortOptions.length > 0) {
-
         dispatch(showModal({
           title: 'Validation Error',
           message: 'Each option must be at least 2 characters long.',
@@ -242,8 +235,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         }));
         return;
       }
-
-
     }
 
     if (currentQuestion.type === 'true-false') {
@@ -299,7 +290,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
       }));
     }
 
-
     setCurrentQuestion({
       text: '',
       type: 'multiple-choice',
@@ -310,7 +300,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
     });
     setEditingQuestionIndex(-1);
     setShowQuestionForm(false);
-  }, [currentQuestion, editingQuestionIndex, showModal]);
+  }, [currentQuestion, editingQuestionIndex, dispatch]);
 
   const handleDeleteQuestion = useCallback((index, e) => {
     if (e) e.stopPropagation();
@@ -318,13 +308,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
   }, []);
 
   const handleCreateQuiz = useCallback(async (e) => {
-    console.log('🚀 handleCreateQuiz called!', {
-      submitting,
-      questionsLength: questions.length,
-      quizData,
-      lectureId,
-      existingQuiz
-    });
     if (e) e.stopPropagation();
     if (!quizData.title.trim()) {
       dispatch(showModal({
@@ -363,15 +346,9 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         isPublished: quizData.isPublished
       };
 
-      console.log('🚀 Creating quiz with payload:', quizPayload);
-      console.log('📋 Questions to create:', questions);
       const quizResponse = await createQuiz(quizPayload);
       const quizId = quizResponse.quiz._id;
-      console.log('Quiz created successfully:', { quizId, quizResponse });
       setCreatedQuizId(quizId);
-
-      console.log('Quiz created successfully:', { quizId, lectureId, quizResponse });
-
 
       for (let i = 0; i < questions.length; i++) {
         const question = questions[i];
@@ -389,12 +366,9 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
       }
 
       try {
-        console.log('Attempting to update lecture with quiz ID:', { lectureId, quizId });
-        const updateResult = await updateLecture(lectureId, { quizId });
-        console.log('Lecture update successful:', updateResult);
+        await updateLecture(lectureId, { quizId });
       } catch (updateError) {
         console.error('Failed to update lecture with quiz ID:', updateError);
-        console.error('Update error details:', updateError.response?.data || updateError.message);
       }
 
       dispatch(showModal({
@@ -405,15 +379,12 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
 
       onQuizCreated(quizId);
     } catch (error) {
-      console.error('Error creating quiz:', error);
-
       let errorMessage = 'Failed to create quiz.';
       let errorTitle = 'Creation Failed';
 
       if (error.response?.status === 409) {
         errorTitle = 'Quiz Already Exists';
         errorMessage = 'This lecture already has a quiz associated with it. Please use the "Check Existing Quiz" button to see the existing quiz and choose to delete it if you want to create a new one.';
-        // Automatically check for existing quiz to show options
         checkExistingQuiz();
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -477,41 +448,34 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
     setShowQuestionForm(false);
   }, [hasUnsavedChanges]);
 
-  console.log('QuizCreator render state:', {
-    quizDataTitle: quizData.title,
-    questionsCount: questions.length,
-    submitting,
-    buttonDisabled: submitting || questions.length === 0
-  });
-
   return (
     <div
-      className="bg-[#FFFFFF] p-6 rounded-xl border border-[#E5E7EB] shadow-sm"
+      className="bg-[#F9FAFB] p-6 rounded-md border border-[#E5E7EB] shadow-sm"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-bold text-[#1B3C53]">Create Quiz</h3>
+        <h3 className="text-2xl font-serif font-bold text-[#1B3C53]">Create Quiz</h3>
         <Button
           text={checkingExistingQuiz ? 'Checking...' : 'Check Existing Quiz'}
           onClick={checkExistingQuiz}
-          className="px-4 py-2 bg-[#4A8292] text-white hover:bg-[#456882] rounded-md text-sm"
+          className="px-4 py-2 bg-[#4A8292] text-[#FFFFFF] hover:bg-[#456882] rounded-md text-sm"
           disabled={checkingExistingQuiz || !lectureId}
         />
       </div>
 
       {existingQuiz && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+        <div className="mb-6 p-4 bg-[#F9FAFB] border border-[#E5E7EB] rounded-md">
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-[#6B7280]" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="ml-3 flex-1">
-              <h3 className="text-sm font-medium text-yellow-800">
+              <h3 className="text-sm font-medium text-[#1B3C53]">
                 Quiz Already Exists
               </h3>
-              <div className="mt-2 text-sm text-yellow-700">
+              <div className="mt-2 text-sm text-[#6B7280]">
                 <p>This lecture already has a quiz titled "{existingQuiz.title}".</p>
                 <p className="mt-1">Choose an option below:</p>
               </div>
@@ -519,13 +483,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 <Button
                   text="Delete & Create New"
                   onClick={handleDeleteExistingQuiz}
-                  className="px-3 py-1 bg-red-600 text-white hover:bg-red-700 rounded text-sm"
+                  className="px-3 py-1 bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md text-sm"
                   disabled={submitting}
                 />
                 <Button
                   text="Cancel"
                   onClick={() => setExistingQuiz(null)}
-                  className="px-3 py-1 bg-gray-500 text-white hover:bg-gray-600 rounded text-sm"
+                  className="px-3 py-1 bg-[#F9FAFB] border border-[#E5E7EB] text-[#1B3C53] hover:bg-[#E5E7EB] rounded-md text-sm"
                   disabled={submitting}
                 />
               </div>
@@ -534,14 +498,12 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         </div>
       )}
 
-
       <div className="space-y-4 mb-6">
         <div>
           <label htmlFor="quizTitle" className="block text-[#1B3C53] text-sm font-semibold mb-2">
             Quiz Title
           </label>
           <input
-            key="quiz-title-input"
             type="text"
             id="quizTitle"
             name="title"
@@ -551,7 +513,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
             onBlur={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             placeholder="Enter quiz title..."
-            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF]"
+            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#6B7280]"
             disabled={submitting}
             autoComplete="off"
           />
@@ -562,7 +524,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
             Description (Optional)
           </label>
           <textarea
-            key="quiz-description-input"
             id="quizDescription"
             name="description"
             value={quizData.description}
@@ -572,23 +533,22 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
             onClick={(e) => e.stopPropagation()}
             placeholder="Enter quiz description..."
             rows="3"
-            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF] resize-vertical"
+            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] resize-vertical"
             disabled={submitting}
             autoComplete="off"
           />
         </div>
 
-        {/* Validation Requirements Info */}
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+        <div className="p-4 bg-[#F9FAFB] border border-[#E5E7EB] rounded-md">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-[#1B3C53]" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">Quiz Requirements</h3>
-              <div className="mt-2 text-sm text-blue-700">
+              <h3 className="text-sm font-medium text-[#1B3C53]">Quiz Requirements</h3>
+              <div className="mt-2 text-sm text-[#6B7280]">
                 <ul className="list-disc list-inside space-y-1">
                   <li>Quiz title must be at least 3 characters long</li>
                   <li>Question text must be at least 5 characters long</li>
@@ -607,7 +567,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
               Pass Percentage
             </label>
             <input
-              key="pass-percentage-input"
               type="number"
               id="passPercentage"
               name="passPercentage"
@@ -627,7 +586,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
           <div className="flex items-center">
             <label className="flex items-center text-[#1B3C53] text-sm font-semibold">
               <input
-                key="is-published-checkbox"
                 type="checkbox"
                 name="isPublished"
                 checked={quizData.isPublished}
@@ -644,14 +602,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         </div>
       </div>
 
-
       <div className="border-t border-[#E5E7EB] pt-6">
         <div className="flex justify-between items-center mb-4">
-          <h4 className="text-lg font-semibold text-[#1B3C53]">Questions ({questions.length})</h4>
+          <h4 className="text-lg font-serif font-bold text-[#1B3C53]">Questions ({questions.length})</h4>
           <Button
             text="Add Question"
             onClick={(e) => handleAddQuestion(e)}
-            className="px-4 py-2 bg-[#4A8292] text-white hover:bg-[#1B3C53] rounded-md font-medium transition-all duration-200"
+            className="px-4 py-2 bg-[#4A8292] text-[#FFFFFF] hover:bg-[#456882] rounded-md font-medium transition-all duration-200"
             disabled={submitting}
           />
         </div>
@@ -661,7 +618,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         ) : (
           <div className="space-y-4">
             {questions.map((question, index) => (
-              <div key={index} className="bg-[#F9FAFB] p-4 rounded-lg border border-[#E5E7EB]">
+              <div key={index} className="bg-[#FFFFFF] p-4 rounded-md border border-[#E5E7EB]">
                 <div className="flex justify-between items-start mb-2">
                   <h5 className="font-medium text-[#1B3C53]">
                     {index + 1}. {question.text} ({question.type})
@@ -670,13 +627,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                     <Button
                       text="Edit"
                       onClick={(e) => handleEditQuestion(index, e)}
-                      className="px-3 py-1 text-xs bg-[#E5E7EB] text-[#1B3C53] hover:bg-[#D1D5DB] rounded"
+                      className="px-3 py-1 text-xs bg-[#F9FAFB] border border-[#E5E7EB] text-[#1B3C53] hover:bg-[#E5E7EB] rounded-md"
                       disabled={submitting}
                     />
                     <Button
                       text="Delete"
                       onClick={(e) => handleDeleteQuestion(index, e)}
-                      className="px-3 py-1 text-xs bg-[#DC2626] text-white hover:bg-[#B91C1C] rounded"
+                      className="px-3 py-1 text-xs bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md"
                       disabled={submitting}
                     />
                   </div>
@@ -685,7 +642,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 {question.type === 'multiple-choice' && (
                   <ul className="text-sm text-[#6B7280] ml-4">
                     {question.options.map((option, optIndex) => (
-                      <li key={optIndex} className={option.isCorrect ? 'text-[#059669] font-medium' : ''}>
+                      <li key={optIndex} className={option.isCorrect ? 'text-[#4A8292] font-medium' : ''}>
                         • {option.text} {option.isCorrect && '(Correct)'}
                       </li>
                     ))}
@@ -693,7 +650,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 )}
                 
                 {question.type === 'short-answer' && (
-                  <p className="text-sm text-[#059669] ml-4 font-medium">
+                  <p className="text-sm text-[#4A8292] ml-4 font-medium">
                     Correct Answer: {question.correctAnswer}
                   </p>
                 )}
@@ -705,45 +662,32 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
         )}
       </div>
 
-
       <div className="border-t border-[#E5E7EB] pt-6 mt-6">
         {existingQuiz ? (
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-[#6B7280] mb-4">
               A quiz already exists for this lecture. Please use the options above to manage the existing quiz.
             </p>
             <Button
               text="Check Existing Quiz Again"
               onClick={checkExistingQuiz}
-              className="px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-md"
+              className="px-4 py-2 bg-[#F9FAFB] border border-[#E5E7EB] text-[#1B3C53] hover:bg-[#E5E7EB] rounded-md"
               disabled={checkingExistingQuiz}
             />
           </div>
         ) : (
           <Button
             text={submitting ? 'Creating Quiz...' : 'Create Quiz'}
-            onClick={(e) => {
-              console.log('🔘 Create Quiz button clicked!', {
-                disabled: submitting || questions.length === 0,
-                submitting,
-                questionsLength: questions.length,
-                quizData,
-                lectureId,
-                existingQuiz
-              });
-              handleCreateQuiz(e);
-            }}
-            className="w-full px-6 py-3 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
+            onClick={(e) => handleCreateQuiz(e)}
+            className="w-full px-6 py-3 bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md font-semibold transition-all duration-200 transform hover:scale-105 shadow-md"
             disabled={submitting || questions.length === 0}
           />
         )}
       </div>
 
-
       <Modal
-        key="question-form-modal"
         isOpen={showQuestionForm}
-        onClose={() => {}} 
+        onClose={() => {}}
         title={editingQuestionIndex >= 0 ? 'Edit Question' : 'Add New Question'}
         type="info"
         zIndex={1100}
@@ -757,10 +701,9 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
           onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={(e) => e.stopPropagation()}
         >
-          {/* Custom Close Button */}
           <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#E5E7EB]">
             <div>
-              <h3 className="text-lg font-semibold text-[#1B3C53]">
+              <h3 className="text-lg font-serif font-bold text-[#1B3C53]">
                 {editingQuestionIndex >= 0 ? 'Edit Question' : 'Add New Question'}
               </h3>
               <p className="text-xs text-[#6B7280] mt-1">
@@ -773,7 +716,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 e.preventDefault();
                 handleQuestionFormClose(e);
               }}
-              className="text-[#6B7280] hover:text-[#1B3C53] transition-colors focus:outline-none focus:ring-2 focus:ring-[#4A8292] p-1 rounded"
+              className="text-[#6B7280] hover:text-[#1B3C53] transition-colors focus:outline-none focus:ring-2 focus:ring-[#4A8292] p-1 rounded-md"
               aria-label="Close question form"
               type="button"
             >
@@ -788,7 +731,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
               Question Text
             </label>
             <textarea
-              key="question-text-input"
               id="questionText"
               name="text"
               value={currentQuestion.text}
@@ -797,9 +739,10 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
               onBlur={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
               placeholder="Enter your question..."
               rows="3"
-              className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF] resize-vertical"
+              className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#6B7280] resize-vertical"
               required
               autoComplete="off"
             />
@@ -811,7 +754,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 Question Type
               </label>
               <select
-                key="question-type-select"
                 id="questionType"
                 name="type"
                 value={currentQuestion.type}
@@ -832,7 +774,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 Points
               </label>
               <input
-                key="question-points-input"
                 type="number"
                 id="questionPoints"
                 name="points"
@@ -848,7 +789,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
             </div>
           </div>
 
-
           {currentQuestion.type === 'multiple-choice' && (
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -858,14 +798,13 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 <Button
                   text="Add Option"
                   onClick={(e) => addOption(e)}
-                  className="px-3 py-1 text-xs bg-[#4A8292] text-white hover:bg-[#1B3C53] rounded"
+                  className="px-3 py-1 text-xs bg-[#4A8292] text-[#FFFFFF] hover:bg-[#456882] rounded-md"
                 />
               </div>
               <div className="space-y-2">
                 {currentQuestion.options.map((option, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <input
-                      key={`option-checkbox-${index}`}
                       type="checkbox"
                       checked={option.isCorrect}
                       onChange={(e) => handleOptionChange(index, 'isCorrect', e.target.checked, e)}
@@ -875,7 +814,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                       className="accent-[#4A8292] focus:ring-[#4A8292]"
                     />
                     <input
-                      key={`option-text-${index}`}
                       type="text"
                       value={option.text}
                       onChange={(e) => handleOptionChange(index, 'text', e.target.value, e)}
@@ -883,14 +821,14 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                       onBlur={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
                       placeholder={`Option ${index + 1}`}
-                      className="flex-1 px-3 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF]"
+                      className="flex-1 px-3 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#6B7280]"
                       autoComplete="off"
                     />
                     {currentQuestion.options.length > 2 && (
                       <Button
                         text="×"
                         onClick={(e) => removeOption(index, e)}
-                        className="px-2 py-1 text-sm bg-[#DC2626] text-white hover:bg-[#B91C1C] rounded"
+                        className="px-2 py-1 text-sm bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md"
                       />
                     )}
                   </div>
@@ -900,7 +838,6 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
             </div>
           )}
 
-          {/* True/False */}
           {currentQuestion.type === 'true-false' && (
             <div>
               <label className="block text-[#1B3C53] text-sm font-semibold mb-2">
@@ -939,14 +876,12 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
             </div>
           )}
 
-          {/* Short Answer */}
           {currentQuestion.type === 'short-answer' && (
             <div>
               <label htmlFor="correctAnswer" className="block text-[#1B3C53] text-sm font-semibold mb-2">
                 Correct Answer
               </label>
               <input
-                key="correct-answer-input"
                 type="text"
                 id="correctAnswer"
                 name="correctAnswer"
@@ -956,7 +891,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 onBlur={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
                 placeholder="Enter the correct answer..."
-                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#9CA3AF]"
+                className="w-full px-4 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4A8292] focus:border-[#4A8292] text-[#1B3C53] placeholder-[#6B7280]"
                 required
                 autoComplete="off"
               />
@@ -972,7 +907,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 e.preventDefault();
                 handleQuestionFormClose(e);
               }}
-              className="px-6 py-2 bg-[#E5E7EB] text-[#1B3C53] hover:bg-[#D1D5DB] rounded-md font-medium transition-colors"
+              className="px-6 py-2 bg-[#F9FAFB] border border-[#E5E7EB] text-[#1B3C53] hover:bg-[#E5E7EB] rounded-md font-medium transition-colors"
               aria-label="Cancel question creation"
             />
             <Button
@@ -982,7 +917,7 @@ function QuizCreator({ lectureId, courseId, onQuizCreated }) {
                 e.preventDefault();
                 handleSaveQuestion(e);
               }}
-              className="px-6 py-2 bg-[#1B3C53] text-white hover:bg-[#456882] rounded-md font-medium transition-colors shadow-sm"
+              className="px-6 py-2 bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882] rounded-md font-medium transition-colors shadow-sm"
               aria-label={editingQuestionIndex >= 0 ? 'Update this question' : 'Add this question to the quiz'}
             />
           </div>
@@ -998,4 +933,4 @@ QuizCreator.propTypes = {
   onQuizCreated: PropTypes.func.isRequired
 };
 
-export default QuizCreator;
+export default React.memo(QuizCreator);
