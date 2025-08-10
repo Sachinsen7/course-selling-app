@@ -4,7 +4,6 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const { UserModel } = require('../db/db');
 
-// Google OAuth Strategy
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -17,7 +16,7 @@ passport.use(new GoogleStrategy({
             name: profile.displayName
         });
 
-        // Check if user already exists with this Google ID
+
         let user = await UserModel.findOne({ googleId: profile.id });
 
         if (user) {
@@ -25,12 +24,11 @@ passport.use(new GoogleStrategy({
             return done(null, user);
         }
 
-        // Check if user exists with the same email
+
         const email = profile.emails[0]?.value;
         user = await UserModel.findOne({ email: email });
 
         if (user) {
-            // Link Google account to existing user
             user.googleId = profile.id;
             user.profilePicture = user.profilePicture || profile.photos[0]?.value;
             await user.save();
@@ -45,8 +43,8 @@ passport.use(new GoogleStrategy({
             firstName: profile.name?.givenName || profile.displayName?.split(' ')[0] || 'User',
             lastName: profile.name?.familyName || profile.displayName?.split(' ')[1] || '',
             profilePicture: profile.photos[0]?.value,
-            role: 'learner', // Default role for OAuth users
-            isEmailVerified: true // Google emails are pre-verified
+            role: 'learner', 
+            isEmailVerified: true
         });
 
         console.log('Created new Google user:', newUser.email);
@@ -58,7 +56,9 @@ passport.use(new GoogleStrategy({
     }
 }));
 
-// JWT Strategy for API authentication
+console.log(process.env.GOOGLE_CLIENT_ID)
+console.log(process.env.GOOGLE_CLIENT_SECRET)
+
 passport.use(new JwtStrategy({
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     secretOrKey: process.env.JWT_SECRET
@@ -74,12 +74,12 @@ passport.use(new JwtStrategy({
     }
 }));
 
-// Serialize user for session
+
 passport.serializeUser((user, done) => {
     done(null, user._id);
 });
 
-// Deserialize user from session
+
 passport.deserializeUser(async (id, done) => {
     try {
         const user = await UserModel.findById(id);
