@@ -36,7 +36,6 @@ function UserProfile() {
 
   useEffect(() => {
     if (!authLoading && user && !profileFetched) {
-      // Use the user data that's already been fetched by AuthContext
       setProfileFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -52,36 +51,32 @@ function UserProfile() {
     }
   }, [authLoading, user, profileFetched]);
 
-  // Handle file selection
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        showModal({
+        dispatch(showModal({
           isOpen: true,
           title: 'Invalid File Type',
           message: 'Please select a valid image file (JPEG, PNG, GIF, or WebP).',
           type: 'error',
-        });
+        }));
         return;
       }
 
-      // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        showModal({
+        dispatch(showModal({
           isOpen: true,
           title: 'File Too Large',
           message: 'Please select an image smaller than 5MB.',
           type: 'error',
-        });
+        }));
         return;
       }
 
       setSelectedFile(file);
 
-      // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewUrl(e.target.result);
@@ -90,7 +85,6 @@ function UserProfile() {
     }
   };
 
-  // Remove selected file
   const removeSelectedFile = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -115,18 +109,15 @@ function UserProfile() {
     setError(null);
 
     try {
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append('firstName', profileFormData.firstName);
       formData.append('lastName', profileFormData.lastName);
       formData.append('bio', profileFormData.bio);
 
-      // Add file if selected
       if (selectedFile) {
         formData.append('profilePicture', selectedFile);
       }
 
-      // Make API call with FormData
       const response = await fetch(`http://localhost:3000/api/user/profile`, {
         method: 'PUT',
         headers: {
@@ -142,21 +133,19 @@ function UserProfile() {
 
       const data = await response.json();
 
-      // Update user context with new data
-      updateUser(data.user);
+      dispatch(updateUser(data.user));
 
-      showModal({
+      dispatch(showModal({
         isOpen: true,
         title: 'Profile Updated!',
         message: 'Your profile has been updated successfully.',
         type: 'success',
-      });
+      }));
 
       setIsEditing(false);
       setSelectedFile(null);
       setPreviewUrl(null);
 
-      // Update form data with new values
       setProfileFormData({
         firstName: data.user.firstName || '',
         lastName: data.user.lastName || '',
@@ -167,12 +156,12 @@ function UserProfile() {
 
     } catch (err) {
       setError(err.message || 'Failed to update profile.');
-      showModal({
+      dispatch(showModal({
         isOpen: true,
         title: 'Update Failed',
         message: err.message || 'Could not update profile.',
         type: 'error',
-      });
+      }));
     } finally {
       setSubmittingProfile(false);
     }
@@ -196,52 +185,52 @@ function UserProfile() {
 
     try {
       await changePassword(passwordFormData.currentPassword, passwordFormData.newPassword);
-      showModal({
+      dispatch(showModal({
         isOpen: true,
         title: 'Password Changed!',
         message: 'Your password has been updated successfully.',
         type: 'success',
-      });
+      }));
       setPasswordFormData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
     } catch (err) {
       setError(err.message || 'Failed to change password.');
-      showModal({
+      dispatch(showModal({
         isOpen: true,
         title: 'Password Change Failed',
         message: err.message || 'Could not change password.',
         type: 'error',
-      });
+      }));
     } finally {
       setSubmittingPassword(false);
     }
   };
 
   if (authLoading || loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+    <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#1B3C53]"></div>
     </div>
   );
 
   if (error && !user) return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
-      <div className="text-red-600 text-center p-6 text-xl bg-white rounded-lg shadow-lg">{error}</div>
+    <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center">
+      <div className="text-[#6B7280] text-center p-6 text-xl bg-[#F9FAFB] rounded-lg shadow-md border border-[#E5E7EB]">{error}</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-[#FFFFFF] font-sans">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-[#F9FAFB] shadow-sm border-b border-[#E5E7EB]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {user?.firstName}! 👋
+              <h1 className="text-3xl font-serif font-bold text-[#1B3C53]">
+                Welcome back, {user?.firstName}
               </h1>
-              <p className="text-gray-600 mt-1">Manage your profile and account settings</p>
+              <p className="text-[#6B7280] mt-1">Manage your profile and account settings</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-[#6B7280]">
                 Member since {new Date(user?.createdAt).toLocaleDateString()}
               </div>
             </div>
@@ -255,20 +244,19 @@ function UserProfile() {
         <div className="mb-8">
           <nav className="flex space-x-8">
             {[
-              { id: 'profile', label: 'Profile', icon: '👤' },
-              { id: 'security', label: 'Security', icon: '🔒' },
-              { id: 'preferences', label: 'Preferences', icon: '⚙️' },
+              { id: 'profile', label: 'Profile' },
+              { id: 'security', label: 'Security' },
+              { id: 'preferences', label: 'Preferences' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-all duration-200 ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'bg-[#1B3C53] text-[#FFFFFF] shadow-md'
+                    : 'text-[#6B7280] hover:text-[#4A8292] hover:bg-[#F9FAFB]'
                 }`}
               >
-                <span>{tab.icon}</span>
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -288,28 +276,28 @@ function UserProfile() {
             >
               {/* Profile Picture Section */}
               <div className="lg:col-span-1">
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Profile Picture</h3>
+                <div className="bg-[#F9FAFB] rounded-md shadow-md p-6 border border-[#E5E7EB]">
+                  <h3 className="text-xl font-serif font-bold text-[#1B3C53] mb-6">Profile Picture</h3>
 
                   <div className="flex flex-col items-center">
                     <div className="relative group">
-                      <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-500 p-1">
+                      <div className="w-32 h-32 rounded-full overflow-hidden bg-[#E5E7EB] p-1">
                         <img
                           src={previewUrl || (user?.profilePicture?.startsWith('http')
                             ? user.profilePicture
                             : `http://localhost:3000${user?.profilePicture}`
                           ) || 'https://via.placeholder.com/150'}
                           alt="Profile"
-                          className="w-full h-full rounded-full object-cover bg-white"
+                          className="w-full h-full rounded-full object-cover bg-[#FFFFFF]"
                         />
                       </div>
                       {isEditing && (
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          className="absolute inset-0 bg-[#1B3C53]/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         >
-                          <span className="text-white text-sm font-medium">Change</span>
+                          <span className="text-[#FFFFFF] text-sm font-medium">Change</span>
                         </button>
                       )}
                     </div>
@@ -326,7 +314,7 @@ function UserProfile() {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                          className="w-full bg-[#1B3C53] text-[#FFFFFF] py-2 px-4 rounded-md hover:bg-[#456882] transition-colors duration-200 font-medium"
                         >
                           Upload New Photo
                         </button>
@@ -334,7 +322,7 @@ function UserProfile() {
                           <button
                             type="button"
                             onClick={removeSelectedFile}
-                            className="w-full mt-2 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
+                            className="w-full mt-2 bg-[#F9FAFB] border border-[#E5E7EB] text-[#1B3C53] py-2 px-4 rounded-md hover:bg-[#E5E7EB] transition-colors duration-200 font-medium"
                           >
                             Remove Selected
                           </button>
@@ -344,26 +332,26 @@ function UserProfile() {
                   </div>
 
                   <div className="mt-6 text-center">
-                    <h4 className="text-lg font-semibold text-gray-900">
+                    <h4 className="text-lg font-serif font-semibold text-[#1B3C53]">
                       {user?.firstName} {user?.lastName}
                     </h4>
-                    <p className="text-gray-600 capitalize">{user?.role}</p>
-                    <p className="text-sm text-gray-500 mt-2">{user?.email}</p>
+                    <p className="text-[#6B7280] capitalize">{user?.role}</p>
+                    <p className="text-sm text-[#6B7280] mt-2">{user?.email}</p>
                   </div>
                 </div>
               </div>
 
               {/* Profile Information Form */}
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="bg-[#F9FAFB] rounded-md shadow-md p-6 border border-[#E5E7EB]">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
+                    <h3 className="text-xl font-serif font-bold text-[#1B3C53]">Personal Information</h3>
                     <button
                       onClick={() => setIsEditing(!isEditing)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                      className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
                         isEditing
-                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                          ? 'bg-[#F9FAFB] border border-[#E5E7EB] text-[#1B3C53] hover:bg-[#E5E7EB]'
+                          : 'bg-[#1B3C53] text-[#FFFFFF] hover:bg-[#456882]'
                       }`}
                     >
                       {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -373,7 +361,7 @@ function UserProfile() {
                   <form onSubmit={handleProfileSubmit} className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="firstName" className="block text-sm font-medium text-[#6B7280] mb-2">
                           First Name
                         </label>
                         <input
@@ -383,17 +371,17 @@ function UserProfile() {
                           value={profileFormData.firstName}
                           onChange={handleProfileChange}
                           disabled={!isEditing || submittingProfile}
-                          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 ${
+                          className={`w-full px-4 py-3 border rounded-md transition-all duration-200 ${
                             isEditing
-                              ? 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                              : 'border-gray-200 bg-gray-50'
+                              ? 'border-[#E5E7EB] focus:border-[#4A8292] focus:ring-2 focus:ring-[#4A8292]/50'
+                              : 'border-[#E5E7EB] bg-[#F9FAFB]'
                           }`}
                           required
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="lastName" className="block text-sm font-medium text-[#6B7280] mb-2">
                           Last Name
                         </label>
                         <input
@@ -403,10 +391,10 @@ function UserProfile() {
                           value={profileFormData.lastName}
                           onChange={handleProfileChange}
                           disabled={!isEditing || submittingProfile}
-                          className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 ${
+                          className={`w-full px-4 py-3 border rounded-md transition-all duration-200 ${
                             isEditing
-                              ? 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                              : 'border-gray-200 bg-gray-50'
+                              ? 'border-[#E5E7EB] focus:border-[#4A8292] focus:ring-2 focus:ring-[#4A8292]/50'
+                              : 'border-[#E5E7EB] bg-[#F9FAFB]'
                           }`}
                           required
                         />
@@ -414,7 +402,7 @@ function UserProfile() {
                     </div>
 
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="email" className="block text-sm font-medium text-[#6B7280] mb-2">
                         Email Address
                       </label>
                       <input
@@ -423,13 +411,13 @@ function UserProfile() {
                         name="email"
                         value={profileFormData.email}
                         disabled
-                        className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-lg text-gray-500"
+                        className="w-full px-4 py-3 border border-[#E5E7EB] bg-[#F9FAFB] rounded-md text-[#6B7280]"
                       />
-                      <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
+                      <p className="text-sm text-[#6B7280] mt-1">Email cannot be changed</p>
                     </div>
 
                     <div>
-                      <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="bio" className="block text-sm font-medium text-[#6B7280] mb-2">
                         Bio
                       </label>
                       <textarea
@@ -440,10 +428,10 @@ function UserProfile() {
                         onChange={handleProfileChange}
                         disabled={!isEditing || submittingProfile}
                         placeholder="Tell us about yourself..."
-                        className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 resize-none ${
+                        className={`w-full px-4 py-3 border rounded-md transition-all duration-200 resize-none ${
                           isEditing
-                            ? 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                            : 'border-gray-200 bg-gray-50'
+                            ? 'border-[#E5E7EB] focus:border-[#4A8292] focus:ring-2 focus:ring-[#4A8292]/50'
+                            : 'border-[#E5E7EB] bg-[#F9FAFB]'
                         }`}
                       />
                     </div>
@@ -454,13 +442,13 @@ function UserProfile() {
                           text={submittingProfile ? 'Saving...' : 'Save Changes'}
                           type="submit"
                           disabled={submittingProfile}
-                          className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                          className="flex-1 bg-[#1B3C53] text-[#FFFFFF] py-3 px-6 rounded-md hover:bg-[#456882] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                         />
                         <button
                           type="button"
                           onClick={() => setIsEditing(false)}
                           disabled={submittingProfile}
-                          className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                          className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] text-[#1B3C53] py-3 px-6 rounded-md hover:bg-[#E5E7EB] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                         >
                           Cancel
                         </button>
@@ -480,13 +468,13 @@ function UserProfile() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-lg p-6"
+              className="bg-[#F9FAFB] rounded-md shadow-md p-6 border border-[#E5E7EB]"
             >
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Change Password</h3>
+              <h3 className="text-xl font-serif font-bold text-[#1B3C53] mb-6">Change Password</h3>
 
               <form onSubmit={handleChangePasswordSubmit} className="space-y-6 max-w-md">
                 <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="currentPassword" className="block text-sm font-medium text-[#6B7280] mb-2">
                     Current Password
                   </label>
                   <input
@@ -495,13 +483,13 @@ function UserProfile() {
                     name="currentPassword"
                     value={passwordFormData.currentPassword}
                     onChange={handlePasswordChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-md focus:border-[#4A8292] focus:ring-2 focus:ring-[#4A8292]/50 transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-[#6B7280] mb-2">
                     New Password
                   </label>
                   <input
@@ -510,13 +498,13 @@ function UserProfile() {
                     name="newPassword"
                     value={passwordFormData.newPassword}
                     onChange={handlePasswordChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-md focus:border-[#4A8292] focus:ring-2 focus:ring-[#4A8292]/50 transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-[#6B7280] mb-2">
                     Confirm New Password
                   </label>
                   <input
@@ -525,7 +513,7 @@ function UserProfile() {
                     name="confirmNewPassword"
                     value={passwordFormData.confirmNewPassword}
                     onChange={handlePasswordChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-[#E5E7EB] rounded-md focus:border-[#4A8292] focus:ring-2 focus:ring-[#4A8292]/50 transition-all duration-200"
                     required
                   />
                 </div>
@@ -534,7 +522,7 @@ function UserProfile() {
                   text={submittingPassword ? 'Updating...' : 'Update Password'}
                   type="submit"
                   disabled={submittingPassword}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                  className="w-full bg-[#1B3C53] text-[#FFFFFF] py-3 px-6 rounded-md hover:bg-[#456882] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                 />
               </form>
             </motion.div>
@@ -548,29 +536,29 @@ function UserProfile() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-lg p-6"
+              className="bg-[#F9FAFB] rounded-md shadow-md p-6 border border-[#E5E7EB]"
             >
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Account Preferences</h3>
+              <h3 className="text-xl font-serif font-bold text-[#1B3C53] mb-6">Account Preferences</h3>
               <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-[#FFFFFF] rounded-md border border-[#E5E7EB]">
                   <div>
-                    <h4 className="font-medium text-gray-900">Email Notifications</h4>
-                    <p className="text-sm text-gray-600">Receive updates about your courses</p>
+                    <h4 className="font-serif font-medium text-[#1B3C53]">Email Notifications</h4>
+                    <p className="text-sm text-[#6B7280]">Receive updates about your courses</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-[#E5E7EB] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#4A8292] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-[#FFFFFF] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#FFFFFF] after:border-[#E5E7EB] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B3C53]"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-[#FFFFFF] rounded-md border border-[#E5E7EB]">
                   <div>
-                    <h4 className="font-medium text-gray-900">Marketing Emails</h4>
-                    <p className="text-sm text-gray-600">Receive promotional content and offers</p>
+                    <h4 className="font-serif font-medium text-[#1B3C53]">Marketing Emails</h4>
+                    <p className="text-sm text-[#6B7280]">Receive promotional content and offers</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-[#E5E7EB] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#4A8292] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-[#FFFFFF] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#FFFFFF] after:border-[#E5E7EB] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B3C53]"></div>
                   </label>
                 </div>
               </div>
